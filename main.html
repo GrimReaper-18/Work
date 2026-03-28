@@ -131,10 +131,7 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   padding: 10px 12px;
-  cursor: pointer;
-  transition: background 0.2s;
 }
-.sidebar-plant:hover { background: rgba(255,255,255,0.08); }
 .plant-label {
   font-family: var(--font-m);
   font-size: 9px;
@@ -185,14 +182,6 @@ body {
 .nav-item:hover { background: rgba(255,255,255,0.06); }
 .nav-item.active { background: rgba(198,172,143,0.25); }
 .nav-item.active .nav-label { color: var(--orange-l); }
-.nav-item.active .nav-icon  { color: var(--orange); }
-.nav-icon {
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-  color: rgba(255,255,255,0.45);
-}
 .nav-label {
   font-size: 13px;
   font-weight: 500;
@@ -1339,48 +1328,40 @@ body {
     <div class="logo-sub">v2.1</div>
   </div>
 
-  <div class="sidebar-plant" onclick="showToast('Plant switcher — coming soon','info')">
+  <div class="sidebar-plant">
     <div class="plant-label">Active plant</div>
     <div class="plant-name">
       <div class="dot-live"></div>
       Ranjan Engineering
-      <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3)">▾</span>
     </div>
   </div>
 
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
     <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
-      <div class="nav-icon">📊</div>
       <div class="nav-label">Dashboard</div>
     </div>
     <div class="nav-item" id="nav-register" onclick="showPage('register')">
-      <div class="nav-icon">📋</div>
       <div class="nav-label">Compliance Register</div>
       <div class="nav-badge badge-red">4</div>
     </div>
     <div class="nav-item" id="nav-audits" onclick="showPage('audits')">
-      <div class="nav-icon">✅</div>
       <div class="nav-label">Audits & Checklists</div>
       <div class="nav-badge badge-amber">2</div>
     </div>
     <div class="nav-item" id="nav-actions" onclick="showPage('actions')">
-      <div class="nav-icon">⚡</div>
       <div class="nav-label">Actions & Tasks</div>
       <div class="nav-badge badge-red">7</div>
     </div>
     <div class="nav-section-label">HR & Safety</div>
     <div class="nav-item" id="nav-people" onclick="showPage('people')">
-      <div class="nav-icon">👷</div>
       <div class="nav-label">People & Training</div>
     </div>
     <div class="nav-item" id="nav-docs" onclick="showPage('docs')">
-      <div class="nav-icon">📁</div>
       <div class="nav-label">Documents & Evidence</div>
     </div>
     <div class="nav-section-label">Settings</div>
     <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
-      <div class="nav-icon">⚙️</div>
       <div class="nav-label">Settings</div>
     </div>
   </nav>
@@ -2434,4 +2415,3 @@ function globalSearch(q) {
 </script>
 </body>
 </html>
-
