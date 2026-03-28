@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CompliOS — Factory Compliance OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ─────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────────────────────────────── */
+:root {
+  --navy:        #041A33;
+  --navy-mid:    #062848;
+  --navy-light:  #0D3B5C;
+  --teal:        #033640;
+  --orange:      #FF7A1A;
+  --orange-d:    #E86200;
+  --orange-l:    #FF9D52;
+  --green:       #009966;
+  --green-d:     #007A52;
+  --green-l:     #00C47D;
+  --red:         #DC2626;
+  --red-l:       #EF4444;
+  --amber:       #D97706;
+  --amber-l:     #F59E0B;
+  --surface:     #F7F8FA;
+  --surface-2:   #EDEEF2;
+  --white:       #FFFFFF;
+  --charcoal:    #111827;
+  --slate:       #374151;
+  --muted:       #6B7280;
+  --muted-l:     #9CA3AF;
+  --border:      #E5E7EB;
+  --border-d:    #D1D5DB;
+
+  --font-d: 'Syne', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'DM Mono', monospace;
+
+  --sidebar-w: 240px;
+  --topbar-h:  60px;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font-b);
+  color: var(--charcoal);
+  background: var(--surface);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────────────────────────────────── */
+@keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes spin     { to { transform:rotate(360deg); } }
+@keyframes slideIn  { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+@keyframes barFill  { from { width:0; } to { width:var(--target-w, 100%); } }
+@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+@keyframes blink    { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+.fade-up  { animation: fadeUp 0.4s ease both; }
+.fade-in  { animation: fadeIn 0.3s ease both; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 50;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.25);
+}
+#sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+.sidebar-logo {
+  padding: 0 20px;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.logo-text {
+  font-family: var(--font-d);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 0.04em;
+}
+.logo-text span { color: var(--orange); }
+.logo-sub {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.sidebar-plant {
+  margin: 14px 14px 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.sidebar-plant:hover { background: rgba(255,255,255,0.08); }
+.plant-label {
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 3px;
+}
+.plant-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plant-name .dot-live {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green-l);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+.nav-section-label {
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.25);
+  padding: 10px 10px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+  position: relative;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); }
+.nav-item.active { background: rgba(255,122,26,0.18); }
+.nav-item.active .nav-label { color: var(--orange-l); }
+.nav-item.active .nav-icon  { color: var(--orange); }
+.nav-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.45);
+}
+.nav-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  flex: 1;
+}
+.nav-badge {
+  font-family: var(--font-m);
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.badge-red   { background: rgba(239,68,68,0.25); color: #FCA5A5; }
+.badge-amber { background: rgba(245,158,11,0.25); color: #FCD34D; }
+.badge-green { background: rgba(0,196,125,0.2);  color: #6EE7B7; }
+
+.sidebar-user {
+  padding: 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange), var(--orange-d));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  flex-shrink: 0;
+}
+.user-name  { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); }
+.user-role  { font-size: 10px; color: rgba(255,255,255,0.35); font-family: var(--font-m); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   MAIN AREA
+───────────────────────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* TOP BAR */
+#topbar {
+  height: var(--topbar-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 16px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+.topbar-title {
+  font-family: var(--font-d);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--charcoal);
+  flex: 1;
+}
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  width: 260px;
+}
+.topbar-search input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-b);
+  font-size: 13px;
+  color: var(--charcoal);
+  width: 100%;
+}
+.topbar-search input::placeholder { color: var(--muted-l); }
+.topbar-icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s;
+  position: relative;
+}
+.topbar-icon-btn:hover { background: var(--surface-2); }
+.notif-dot {
+  position: absolute;
+  top: 6px; right: 7px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--red-l);
+  border: 1.5px solid var(--white);
+}
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--orange);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.topbar-btn:hover { background: var(--orange-d); }
+
+/* CONTENT */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SHARED COMPONENTS
+───────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-family: var(--font-d);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 4px;
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-family: var(--font-m);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.badge-ok       { background: rgba(0,153,102,0.1);  color: var(--green-d);  border: 1px solid rgba(0,153,102,0.2); }
+.badge-due      { background: rgba(217,119,6,0.1);  color: var(--amber);    border: 1px solid rgba(217,119,6,0.2); }
+.badge-overdue  { background: rgba(220,38,38,0.1);  color: var(--red);      border: 1px solid rgba(220,38,38,0.2); }
+.badge-info     { background: rgba(4,26,51,0.07);   color: var(--navy-mid); border: 1px solid rgba(4,26,51,0.12); }
+.badge-pending  { background: rgba(107,114,128,0.1);color: var(--muted);    border: 1px solid rgba(107,114,128,0.2); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--orange); color: var(--white); }
+.btn-primary:hover { background: var(--orange-d); }
+.btn-secondary { background: var(--surface); color: var(--charcoal); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-navy { background: var(--navy); color: var(--white); }
+.btn-navy:hover { background: var(--navy-mid); }
+.btn-ghost { background: transparent; color: var(--muted); padding: 6px 10px; }
+.btn-ghost:hover { background: var(--surface); color: var(--charcoal); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-danger { background: rgba(220,38,38,0.08); color: var(--red); border: 1px solid rgba(220,38,38,0.2); }
+.btn-danger:hover { background: rgba(220,38,38,0.15); }
+
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.page-title { font-family: var(--font-d); font-size: 22px; font-weight: 800; color: var(--charcoal); }
+.page-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: var(--font-m);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--slate);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(247,248,250,0.8); cursor: pointer; }
+.data-table .cell-primary { font-weight: 600; color: var(--charcoal); }
+.data-table .cell-mono    { font-family: var(--font-m); font-size: 11px; }
+.data-table .cell-muted   { color: var(--muted); font-size: 12px; }
+
+/* KPI TILES */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.kpi-tile {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-tile::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.kpi-tile.ok::after    { background: linear-gradient(90deg, var(--green), var(--green-l)); }
+.kpi-tile.warn::after  { background: linear-gradient(90deg, var(--amber), var(--amber-l)); }
+.kpi-tile.danger::after{ background: linear-gradient(90deg, var(--red), var(--red-l)); }
+.kpi-tile.navy::after  { background: linear-gradient(90deg, var(--navy), var(--navy-light)); }
+.kpi-tile.info::after  { background: linear-gradient(90deg, var(--orange), var(--orange-l)); }
+
+.kpi-icon { font-size: 22px; margin-bottom: 10px; }
+.kpi-num {
+  font-family: var(--font-d);
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-tile.ok    .kpi-num { color: var(--green-d); }
+.kpi-tile.warn  .kpi-num { color: var(--amber); }
+.kpi-tile.danger.kpi-num { color: var(--red); }
+.kpi-tile.danger .kpi-num { color: var(--red); }
+.kpi-tile.navy  .kpi-num { color: var(--navy-mid); }
+.kpi-tile.info  .kpi-num { color: var(--orange-d); }
+.kpi-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.kpi-sub   { font-size: 11px; color: var(--muted-l); margin-top: 2px; font-family: var(--font-m); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   DRAWER
+───────────────────────────────────────────────────────────────────── */
+#drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4,26,51,0.4);
+  z-index: 200;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+#drawer-overlay.open { display: block; }
+#drawer {
+  position: fixed;
+  top: 0; right: 0;
+  width: 480px;
+  height: 100vh;
+  background: var(--white);
+  z-index: 201;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+#drawer.open { transform: translateX(0); }
+.drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+.drawer-title { font-family: var(--font-d); font-size: 17px; font-weight: 700; color: var(--charcoal); }
+.drawer-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.drawer-close {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.drawer-close:hover { background: var(--surface-2); color: var(--charcoal); }
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+.drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Detail sections */
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-label { font-family: var(--font-m); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.detail-val   { font-size: 13px; font-weight: 600; color: var(--charcoal); text-align: right; }
+
+.history-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+.history-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.history-date { font-family: var(--font-m); font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.history-text { font-size: 13px; color: var(--slate); }
+
+/* TOAST */
+#toast-container {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--charcoal);
+  color: var(--white);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: all;
+  min-width: 280px;
+}
+.toast.success { border-left: 4px solid var(--green-l); }
+.toast.warning { border-left: 4px solid var(--amber-l); }
+.toast.error   { border-left: 4px solid var(--red-l); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   PROGRESS BAR
+───────────────────────────────────────────────────────────────────── */
+.prog-bar {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 3px;
+  animation: barFill 1s ease both;
+}
+.prog-fill.green  { background: linear-gradient(90deg, var(--green), var(--green-l)); }
+.prog-fill.amber  { background: linear-gradient(90deg, var(--amber), var(--amber-l)); }
+.prog-fill.red    { background: linear-gradient(90deg, var(--red), var(--red-l)); }
+.prog-fill.orange { background: linear-gradient(90deg, var(--orange-d), var(--orange)); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   DASHBOARD PAGE
+───────────────────────────────────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 14px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.cal-day:hover { background: var(--surface-2); }
+.cal-day.today { background: var(--navy); color: var(--white); font-weight: 700; }
+.cal-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+}
+.cal-day.event-red::after   { background: var(--red-l); }
+.cal-day.event-amber::after { background: var(--amber-l); }
+.cal-day.event-green::after { background: var(--green-l); }
+.cal-day.past { color: var(--muted-l); }
+.cal-header   { font-family: var(--font-m); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); text-align: center; }
+
+.overdue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+.overdue-item:hover { border-color: var(--orange); box-shadow: var(--shadow-sm); }
+.overdue-item.critical { border-left: 4px solid var(--red-l); }
+.overdue-item.warning  { border-left: 4px solid var(--amber-l); }
+.overdue-icon { font-size: 20px; flex-shrink: 0; }
+.overdue-title { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.overdue-meta  { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-top: 2px; }
+.overdue-cta   { margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   REGISTER PAGE
+───────────────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip:hover     { border-color: var(--navy-light); color: var(--navy-mid); }
+.filter-chip.active    { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.filter-chip.orange.active { background: var(--orange); border-color: var(--orange); }
+.filter-chip.green.active  { background: var(--green-d); border-color: var(--green-d); }
+.filter-chip.red.active    { background: var(--red); border-color: var(--red); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   AUDITS PAGE
+───────────────────────────────────────────────────────────────────── */
+.audit-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.audit-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.audit-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--orange); }
+.audit-card-type {
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--orange);
+  margin-bottom: 8px;
+}
+.audit-card-title { font-family: var(--font-d); font-size: 15px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
+.audit-card-meta  { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.audit-card-footer { display: flex; justify-content: space-between; align-items: center; }
+
+/* CHECKLIST MODAL */
+#checklist-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(4,26,51,0.5);
+  backdrop-filter: blur(3px);
+  align-items: center;
+  justify-content: center;
+}
+#checklist-modal.open { display: flex; }
+.modal-box {
+  background: var(--white);
+  border-radius: 20px;
+  width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.3s ease both;
+}
+.modal-header {
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+.modal-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--charcoal); }
+.modal-sub   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.modal-body  { flex: 1; overflow-y: auto; padding: 20px 26px; }
+.modal-footer {
+  padding: 16px 26px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.checklist-section { margin-bottom: 20px; }
+.checklist-section-title {
+  font-family: var(--font-d);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy-mid);
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: rgba(4,26,51,0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--navy);
+}
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+.checklist-question { font-size: 13px; color: var(--slate); flex: 1; line-height: 1.5; }
+.checklist-actions  { display: flex; gap: 6px; flex-shrink: 0; }
+.check-btn {
+  width: 36px; height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.check-btn:hover    { border-color: var(--navy); }
+.check-btn.yes.sel  { background: var(--green); border-color: var(--green); color: var(--white); }
+.check-btn.no.sel   { background: var(--red);   border-color: var(--red);   color: var(--white); }
+.check-btn.na.sel   { background: var(--muted); border-color: var(--muted); color: var(--white); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   ACTIONS PAGE
+───────────────────────────────────────────────────────────────────── */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.kanban-col { background: var(--surface); border-radius: var(--radius-lg); padding: 14px; }
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.kanban-col-title { font-size: 13px; font-weight: 700; color: var(--charcoal); }
+.kanban-count {
+  font-family: var(--font-m);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+.action-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.action-card:hover { box-shadow: var(--shadow-md); border-color: var(--orange); }
+.action-card.high  { border-left: 3px solid var(--red-l); }
+.action-card.med   { border-left: 3px solid var(--amber-l); }
+.action-card.low   { border-left: 3px solid var(--green-l); }
+.action-title  { font-size: 13px; font-weight: 600; color: var(--charcoal); margin-bottom: 6px; line-height: 1.4; }
+.action-linked { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-bottom: 8px; }
+.action-footer { display: flex; align-items: center; gap: 8px; }
+.action-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.action-due { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   PEOPLE PAGE
+───────────────────────────────────────────────────────────────────── */
+.people-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 4px;
+  width: fit-content;
+}
+.people-tab {
+  padding: 7px 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--muted);
+}
+.people-tab.active { background: var(--white); color: var(--charcoal); box-shadow: var(--shadow-sm); font-weight: 600; }
+
+/* Training matrix */
+.matrix-scroll { overflow-x: auto; }
+.matrix-table { min-width: 700px; border-collapse: collapse; width: 100%; }
+.matrix-table th {
+  padding: 10px 8px;
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.matrix-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+.matrix-cell {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin: 0 auto;
+}
+.mc-done  { background: rgba(0,153,102,0.12); }
+.mc-miss  { background: rgba(220,38,38,0.1); }
+.mc-na    { background: var(--surface-2); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   DOCUMENTS PAGE
+───────────────────────────────────────────────────────────────────── */
+.doc-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.doc-tree { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.doc-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--surface-2);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--slate);
+  transition: background 0.15s;
+}
+.doc-tree-item:hover   { background: var(--surface); }
+.doc-tree-item.active  { background: rgba(255,122,26,0.08); color: var(--orange-d); font-weight: 600; }
+.doc-tree-item.sub     { padding-left: 36px; font-size: 12px; }
+.doc-tree-item:last-child { border-bottom: none; }
+.doc-list { display: flex; flex-direction: column; gap: 10px; }
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.doc-item:hover { box-shadow: var(--shadow-sm); border-color: var(--navy-light); }
+.doc-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.doc-name { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.doc-meta { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-top: 2px; }
+.doc-actions { margin-left: auto; display: flex; gap: 6px; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   ONBOARDING MODAL
+───────────────────────────────────────────────────────────────────── */
+#onboard-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--teal) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.onboard-box {
+  background: var(--white);
+  border-radius: 24px;
+  width: 520px;
+  padding: 40px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.5s ease both;
+}
+.onboard-logo {
+  font-family: var(--font-d);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.onboard-logo span { color: var(--orange); }
+.onboard-step { display: none; }
+.onboard-step.active { display: block; }
+.onboard-h { font-family: var(--font-d); font-size: 20px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
+.onboard-p { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.option-btn {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--white);
+  text-align: left;
+}
+.option-btn:hover   { border-color: var(--orange); }
+.option-btn.sel     { border-color: var(--orange); background: rgba(255,122,26,0.06); }
+.option-icon  { font-size: 22px; margin-bottom: 6px; }
+.option-label { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.option-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.onboard-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  color: var(--charcoal);
+  outline: none;
+  margin-bottom: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.onboard-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,122,26,0.1); }
+.progress-steps {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+.prog-step {
+  width: 32px; height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  transition: background 0.3s;
+}
+.prog-step.done { background: var(--orange); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   NOTIFICATION PANEL
+───────────────────────────────────────────────────────────────────── */
+#notif-panel {
+  position: fixed;
+  top: 70px; right: 16px;
+  width: 340px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 150;
+  display: none;
+  animation: fadeUp 0.25s ease both;
+  overflow: hidden;
+}
+#notif-panel.open { display: block; }
+.notif-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notif-title { font-family: var(--font-d); font-size: 14px; font-weight: 700; color: var(--charcoal); }
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--surface-2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.notif-item:hover { background: var(--surface); }
+.notif-item:last-child { border-bottom: none; }
+.notif-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.notif-text { font-size: 12px; color: var(--slate); line-height: 1.5; }
+.notif-time { font-family: var(--font-m); font-size: 10px; color: var(--muted-l); margin-top: 3px; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   UPLOAD ZONE
+───────────────────────────────────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+}
+.upload-zone:hover { border-color: var(--orange); background: rgba(255,122,26,0.03); }
+.upload-zone-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-zone-text { font-size: 13px; color: var(--muted); }
+.upload-zone-text strong { color: var(--orange); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   SCROLLBAR STYLING
+───────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-d); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   TOOLTIP
+───────────────────────────────────────────────────────────────────── */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--charcoal);
+  color: var(--white);
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 999;
+}
+[data-tip]:hover::after { opacity: 1; }
+
+/* Section toggle */
+.section-toggle { display: none; }
+.section-toggle.show { display: block; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 24px; }
+.empty-icon  { font-size: 48px; margin-bottom: 14px; opacity: 0.4; }
+.empty-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--charcoal); margin-bottom: 8px; }
+.empty-text  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ONBOARDING MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="onboard-modal">
+  <div class="onboard-box">
+    <div class="onboard-logo">COMPLI<span>OS</span></div>
+    <div class="progress-steps">
+      <div class="prog-step done" id="ps1"></div>
+      <div class="prog-step" id="ps2"></div>
+      <div class="prog-step" id="ps3"></div>
+      <div class="prog-step" id="ps4"></div>
+    </div>
+
+    <!-- Step 1: Sector -->
+    <div class="onboard-step active" id="os1">
+      <div class="onboard-h">What sector are you in?</div>
+      <div class="onboard-p">We'll pre-load the right compliance templates for your plant type.</div>
+      <div class="option-grid">
+        <div class="option-btn sel" onclick="selectOption(this,'sector','Forging & Casting')">
+          <div class="option-icon">🔩</div>
+          <div class="option-label">Forging & Casting</div>
+          <div class="option-sub">Hot metal, furnaces, cranes</div>
+        </div>
+        <div class="option-btn" onclick="selectOption(this,'sector','Stamping & Sheet Metal')">
+          <div class="option-icon">⚙️</div>
+          <div class="option-label">Stamping & Sheet Metal</div>
+          <div class="option-sub">Press shop, tools & dies</div>
+        </div>
+        <div class="option-btn" onclick="selectOption(this,'sector','Specialised Components')">
+          <div class="option-icon">🔧</div>
+          <div class="option-label">Specialised Components</div>
+          <div class="option-sub">Machining, precision parts</div>
+        </div>
+        <div class="option-btn" onclick="selectOption(this,'sector','Safety Shoes')">
+          <div class="option-icon">👟</div>
+          <div class="option-label">Safety Shoes</div>
+          <div class="option-sub">IS 15298, CE, PPE compliance</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="nextOnboard(2)">Continue →</button>
+    </div>
+
+    <!-- Step 2: Location -->
+    <div class="onboard-step" id="os2">
+      <div class="onboard-h">Where is your plant?</div>
+      <div class="onboard-p">Location determines which state-specific rules apply — MPCB, Maharashtra Factories Rules, DISH, etc.</div>
+      <input class="onboard-input" type="text" placeholder="Plant name (e.g. Ranjan Engineering Pvt Ltd)" id="inp-plant"/>
+      <input class="onboard-input" type="text" placeholder="Location (e.g. Chakan MIDC, Pune)" id="inp-location" value="Chakan MIDC, Pune"/>
+      <input class="onboard-input" type="text" placeholder="State (e.g. Maharashtra)" id="inp-state" value="Maharashtra"/>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(3)">Continue →</button>
+    </div>
+
+    <!-- Step 3: Workers -->
+    <div class="onboard-step" id="os3">
+      <div class="onboard-h">Tell us about your workforce</div>
+      <div class="onboard-p">This helps us set up PF/ESI tracking, shift registers and labour compliance correctly.</div>
+      <input class="onboard-input" type="number" placeholder="Number of workers (e.g. 150)" id="inp-workers" value="150"/>
+      <input class="onboard-input" type="number" placeholder="Number of shifts (1, 2 or 3)" id="inp-shifts" value="2"/>
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" checked id="cb-pf" style="width:14px;height:14px;accent-color:var(--orange)"/> PF applicable
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" checked id="cb-esi" style="width:14px;height:14px;accent-color:var(--orange)"/> ESI applicable
+        </label>
+      </div>
+      <input class="onboard-input" type="text" placeholder="Main OEM customers (e.g. Bajaj, VW, Tata)" id="inp-oem" value="Bajaj Auto, VW Group"/>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(4)">Continue →</button>
+    </div>
+
+    <!-- Step 4: Loading -->
+    <div class="onboard-step" id="os4">
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:48px;margin-bottom:16px" id="ob-icon">⏳</div>
+        <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
+        <div class="onboard-p" id="ob-sub">Configuring 33 obligations for Forging & Casting · Maharashtra</div>
+        <div class="prog-bar" style="margin:24px 0">
+          <div class="prog-fill orange" id="ob-progress" style="width:0;transition:width 0.4s ease"></div>
+        </div>
+        <div id="ob-items" style="font-family:var(--font-m);font-size:11px;color:var(--muted);text-align:left;max-width:320px;margin:0 auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     NOTIFICATIONS PANEL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="notif-panel">
+  <div class="notif-header">
+    <div class="notif-title">🔔 Notifications</div>
+    <span class="btn btn-ghost btn-sm" onclick="toggleNotif()">✕</span>
+  </div>
+  <div class="notif-item" onclick="showRegisterDetail('mpcb')">
+    <div class="notif-dot" style="background:var(--red-l)"></div>
+    <div>
+      <div class="notif-text"><strong>MPCB Consent overdue</strong> — Air/Water consent expired 3 days ago. Renew immediately.</div>
+      <div class="notif-time">3 days ago</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--amber-l)"></div>
+    <div>
+      <div class="notif-text"><strong>PF challan due in 5 days</strong> — March 2026 PF contribution due by 15th.</div>
+      <div class="notif-time">Today, 09:00 AM</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--amber-l)"></div>
+    <div>
+      <div class="notif-text"><strong>Fire NOC expiring in 18 days</strong> — Building B Fire NOC renewal required.</div>
+      <div class="notif-time">Yesterday, 08:30 AM</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--green-l)"></div>
+    <div>
+      <div class="notif-text"><strong>Foundry safety audit completed</strong> — Manoj T. submitted monthly audit. 2 NCs found.</div>
+      <div class="notif-time">2 days ago</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--navy-light)"></div>
+    <div>
+      <div class="notif-text"><strong>Bajaj audit scheduled</strong> — OEM audit in 12 days. 4 open actions remain.</div>
+      <div class="notif-time">3 days ago</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     DRAWER
+═══════════════════════════════════════════════════════════════════ -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title" id="drawer-title">Item Detail</div>
+      <div class="drawer-sub" id="drawer-sub"></div>
+    </div>
+    <div class="drawer-close" onclick="closeDrawer()">×</div>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer" id="drawer-footer"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHECKLIST MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="checklist-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Foundry Safety Audit</div>
+        <div class="modal-sub" id="modal-sub">Monthly · Chakan MIDC Plant · March 2026</div>
+      </div>
+      <div class="drawer-close" onclick="closeModal()">×</div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <div id="modal-score" style="font-family:var(--font-m);font-size:12px;color:var(--muted)">0 / 0 answered</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="closeModal()">Save draft</button>
+        <button class="btn btn-primary" onclick="submitChecklist()">Submit audit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+═══════════════════════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">COMPLI<span>OS</span></div>
+    <div class="logo-sub">v2.1</div>
+  </div>
+
+  <div class="sidebar-plant" onclick="showToast('Plant switcher — coming soon','info')">
+    <div class="plant-label">Active plant</div>
+    <div class="plant-name">
+      <div class="dot-live"></div>
+      Ranjan Engineering
+      <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3)">▾</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+      <div class="nav-icon">📊</div>
+      <div class="nav-label">Dashboard</div>
+    </div>
+    <div class="nav-item" id="nav-register" onclick="showPage('register')">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">Compliance Register</div>
+      <div class="nav-badge badge-red">4</div>
+    </div>
+    <div class="nav-item" id="nav-audits" onclick="showPage('audits')">
+      <div class="nav-icon">✅</div>
+      <div class="nav-label">Audits & Checklists</div>
+      <div class="nav-badge badge-amber">2</div>
+    </div>
+    <div class="nav-item" id="nav-actions" onclick="showPage('actions')">
+      <div class="nav-icon">⚡</div>
+      <div class="nav-label">Actions & Tasks</div>
+      <div class="nav-badge badge-red">7</div>
+    </div>
+    <div class="nav-section-label">HR & Safety</div>
+    <div class="nav-item" id="nav-people" onclick="showPage('people')">
+      <div class="nav-icon">👷</div>
+      <div class="nav-label">People & Training</div>
+    </div>
+    <div class="nav-item" id="nav-docs" onclick="showPage('docs')">
+      <div class="nav-icon">📁</div>
+      <div class="nav-label">Documents & Evidence</div>
+    </div>
+    <div class="nav-section-label">Settings</div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Settings</div>
+    </div>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">AR</div>
+    <div>
+      <div class="user-name">Aman Rajak</div>
+      <div class="user-role">Admin · EHS Head</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════════════════════ -->
+<div id="main">
+  <div id="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-search">
+      <span>🔍</span>
+      <input type="text" placeholder="Search licences, audits, actions…" id="global-search" oninput="globalSearch(this.value)"/>
+    </div>
+    <div class="topbar-icon-btn" onclick="toggleNotif()" data-tip="Notifications">
+      🔔
+      <div class="notif-dot"></div>
+    </div>
+    <div class="topbar-icon-btn" data-tip="Export report" onclick="exportReport()">📤</div>
+    <button class="topbar-btn" onclick="showPage('register')">+ Add obligation</button>
+  </div>
+
+  <div id="content">
+    <!-- Pages injected by JS -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────────────────── */
+const DATA = {
+  register: [
+    { id:'mpcb',  name:'MPCB Consent to Operate', cat:'Environment', law:'Water Act / Air Act', plant:'Chakan MIDC', owner:'Aman Rajak', freq:'5 years', due:'2026-03-10', status:'overdue', evidence:true,  daysLeft:-3,  fine:'₹1,50,000', portal:'https://enviis.mpcb.gov.in' },
+    { id:'dish',  name:'Factory Licence (Form 2)', cat:'Statutory',   law:'Factories Act 1948', plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-04-05', status:'due',     evidence:true,  daysLeft:21,  fine:'₹75,000',   portal:'https://dish.maharashtra.gov.in' },
+    { id:'fire',  name:'Fire NOC — Building B',    cat:'Safety',      law:'Fire Prevention Act', plant:'Chakan MIDC', owner:'Ravi Desai', freq:'Yearly',  due:'2026-04-01', status:'due',     evidence:true,  daysLeft:18,  fine:'₹50,000',   portal:'#' },
+    { id:'pf',    name:'PF Monthly Challan (Mar)', cat:'PF/ESI',      law:'EPF Act 1952',        plant:'Chakan MIDC', owner:'Priya Nair', freq:'Monthly', due:'2026-03-15', status:'due',     evidence:false, daysLeft:0,   fine:'₹25,000',   portal:'https://www.epfindia.gov.in' },
+    { id:'esi',   name:'ESI Monthly Challan (Mar)',cat:'PF/ESI',      law:'ESI Act 1948',        plant:'Chakan MIDC', owner:'Priya Nair', freq:'Monthly', due:'2026-03-15', status:'due',     evidence:false, daysLeft:0,   fine:'₹15,000',   portal:'https://www.esic.in' },
+    { id:'boiler',name:'Boiler Inspection (IBR)',  cat:'Safety',      law:'Boilers Act 1923',    plant:'Chakan MIDC', owner:'Suresh P.',  freq:'Yearly',  due:'2026-05-10', status:'ok',      evidence:true,  daysLeft:57,  fine:'₹50,000',   portal:'#' },
+    { id:'crane', name:'Crane & Hoist Certificate',cat:'Safety',      law:'MFR Rule 61',         plant:'Chakan MIDC', owner:'Suresh P.',  freq:'Yearly',  due:'2026-06-01', status:'ok',      evidence:true,  daysLeft:79,  fine:'₹30,000',   portal:'#' },
+    { id:'pf-reg',name:'PF Employer Registration', cat:'PF/ESI',      law:'EPF Act 1952',        plant:'Chakan MIDC', owner:'Priya Nair', freq:'One-time',due:'—',          status:'ok',      evidence:true,  daysLeft:999, fine:'—',          portal:'#' },
+    { id:'form11',name:'Form 11 — Pressure Vessel', cat:'Statutory',  law:'DISH Approval',       plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-04-15', status:'due',     evidence:true,  daysLeft:32,  fine:'₹40,000',   portal:'#' },
+    { id:'iatf',  name:'IATF 16949 Surveillance',  cat:'OEM',         law:'IATF Standard',       plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-07-15', status:'ok',      evidence:true,  daysLeft:124, fine:'Cert lapse', portal:'#' },
+    { id:'iso45', name:'ISO 45001 Internal Audit', cat:'OEM',         law:'ISO 45001:2018',      plant:'Chakan MIDC', owner:'Ravi Desai', freq:'Yearly',  due:'2026-05-20', status:'ok',      evidence:false, daysLeft:68,  fine:'Cert lapse', portal:'#' },
+    { id:'wr',    name:'Workmen Register (Form A)', cat:'Statutory',   law:'Factories Act 1948',  plant:'Chakan MIDC', owner:'Priya Nair', freq:'Ongoing', due:'Ongoing',    status:'ok',      evidence:true,  daysLeft:999, fine:'₹10,000',   portal:'#' },
+  ],
+  actions: [
+    { id:1, title:'Renew MPCB Consent to Operate', linked:'MPCB Overdue', owner:'AR', due:'2026-03-20', status:'overdue', priority:'high' },
+    { id:2, title:'Upload PF challan for March',    linked:'PF Filing',     owner:'PN', due:'2026-03-15', status:'overdue', priority:'high' },
+    { id:3, title:'Upload ESI challan for March',   linked:'ESI Filing',    owner:'PN', due:'2026-03-15', status:'overdue', priority:'high' },
+    { id:4, title:'Repair ladle pre-heat burner',   linked:'Foundry Audit', owner:'SP', due:'2026-03-25', status:'open',    priority:'high' },
+    { id:5, title:'Replace safety shoes — 3 workers',linked:'PPE Audit',   owner:'RD', due:'2026-03-28', status:'open',    priority:'med' },
+    { id:6, title:'Submit Fire NOC renewal form',   linked:'Fire NOC',      owner:'RD', due:'2026-04-01', status:'open',    priority:'med' },
+    { id:7, title:'Upload ISO 45001 evidence pack', linked:'ISO 45001 Audit',owner:'AR',due:'2026-04-10', status:'open',    priority:'med' },
+    { id:8, title:'Update DISH Form 11 drawings',   linked:'Form 11',       owner:'SP', due:'2026-04-15', status:'open',    priority:'low' },
+    { id:9, title:'Conduct Q1 safety induction',    linked:'Training Matrix',owner:'RD',due:'2026-03-31', status:'open',    priority:'low' },
+    { id:10,title:'Archive 2025 OEM audit records', linked:'Documents',     owner:'AR', due:'2026-04-30', status:'done',    priority:'low' },
+    { id:11,title:'Factory licence renewal package',linked:'Factory Licence',owner:'PN',due:'2026-05-01', status:'done',    priority:'low' },
+  ],
+  people: [
+    { id:'P001', name:'Ramesh Kumar',   dept:'Production',  role:'Supervisor',  pf:true,  esi:true,  uan:'100234567890', ip:'1234567890', medical:'2025-10-01', trainings:['Induction','PPE','Hot Work'] },
+    { id:'P002', name:'Suresh Patil',   dept:'Maintenance', role:'Technician',  pf:true,  esi:true,  uan:'100234567891', ip:'1234567891', medical:'2025-09-15', trainings:['Induction','PPE','Crane OHC','Foundry Safety'] },
+    { id:'P003', name:'Anita Mehta',    dept:'HR',          role:'HR Executive',pf:true,  esi:false, uan:'100234567892', ip:'—',          medical:'2025-11-20', trainings:['Induction','First Aid'] },
+    { id:'P004', name:'Vijay Sharma',   dept:'EHS',         role:'Safety Officer',pf:true,esi:true,  uan:'100234567893', ip:'1234567893', medical:'2025-08-30', trainings:['Induction','PPE','Fire Safety','Foundry Safety','Hot Work'] },
+    { id:'P005', name:'Priya Nair',     dept:'HR',          role:'HR Head',     pf:true,  esi:false, uan:'100234567894', ip:'—',          medical:'2025-12-01', trainings:['Induction'] },
+    { id:'P006', name:'Manoj Thorat',   dept:'Production',  role:'Operator',    pf:true,  esi:true,  uan:'',             ip:'1234567895', medical:'2025-07-10', trainings:['Induction','PPE'] },
+    { id:'P007', name:'Ravi Desai',     dept:'EHS',         role:'EHS Head',    pf:true,  esi:false, uan:'100234567896', ip:'—',          medical:'2025-10-15', trainings:['Induction','PPE','Fire Safety','First Aid','Foundry Safety'] },
+  ],
+  audits: [
+    { id:'A001', type:'Safety/EHS',    title:'Monthly Foundry Safety Audit',   freq:'Monthly',   due:'2026-03-31', status:'due',       plant:'Chakan MIDC', questions: [
+        { section:'Furnace & Ladle Safety',   q:'Are ladle pre-heat burners in good condition?'},
+        { section:'Furnace & Ladle Safety',   q:'Are protective screens provided near furnace?'},
+        { section:'Furnace & Ladle Safety',   q:'Are workers using face shields and aluminized aprons?'},
+        { section:'Crane & Lifting Tackle',   q:'Is daily pre-use check of crane done and recorded?'},
+        { section:'Crane & Lifting Tackle',   q:'Are slings, hooks and chains within safe working load?'},
+        { section:'Crane & Lifting Tackle',   q:'Is crane operator certified and record maintained?'},
+        { section:'PPE Compliance',           q:'Are all operators wearing safety shoes (IS 15298)?'},
+        { section:'PPE Compliance',           q:'Are heat-resistant gloves available and used?'},
+        { section:'PPE Compliance',           q:'Is PPE issuance register up to date?'},
+        { section:'Housekeeping & Emergency', q:'Are gangways and emergency exits clear?'},
+        { section:'Housekeeping & Emergency', q:'Are fire extinguishers inspected and accessible?'},
+        { section:'Housekeeping & Emergency', q:'Is scrap and waste segregated and removed daily?'},
+    ]},
+    { id:'A002', type:'Statutory',     title:'Factory Act Registers Check',    freq:'Quarterly', due:'2026-04-01', status:'due',       plant:'Chakan MIDC', questions: [
+        { section:'Statutory Registers',      q:'Is Form A (Adult Worker Register) updated?'},
+        { section:'Statutory Registers',      q:'Is the Overtime Register (Form IX) current?'},
+        { section:'Statutory Registers',      q:'Is the Accident Register (Form 16) maintained?'},
+        { section:'Leave & Wages',            q:'Is the Leave with Wages Register (Form G) current?'},
+        { section:'Leave & Wages',            q:'Are wage slips issued for the last month?'},
+        { section:'Notices',                  q:'Is the Factory Act notice displayed in local language?'},
+        { section:'Notices',                  q:'Is the list of certified first-aiders displayed?'},
+    ]},
+    { id:'A003', type:'OEM',           title:'Bajaj Pre-Audit Checklist',       freq:'As needed', due:'2026-04-05', status:'upcoming',  plant:'Chakan MIDC', questions: [
+        { section:'Quality System',           q:'Is IATF 16949 certificate current and displayed?'},
+        { section:'Quality System',           q:'Are process FMEAs reviewed in last 12 months?'},
+        { section:'Quality System',           q:'Are gauges calibrated with valid stickers?'},
+        { section:'EHS & Labour',             q:'Are all statutory licences valid and accessible?'},
+        { section:'EHS & Labour',             q:'Are PF/ESI contributions current with challans on file?'},
+        { section:'EHS & Labour',             q:'Is a monthly EHS audit done and records available?'},
+        { section:'Supplier Compliance',      q:'Are material test certificates available for RM?'},
+        { section:'Supplier Compliance',      q:'Are finished goods QA reports archived by batch?'},
+    ]},
+    { id:'A004', type:'Safety/EHS',    title:'Weekly Crane & Hoist Inspection', freq:'Weekly',    due:'2026-03-13', status:'completed', plant:'Chakan MIDC', questions:[] },
+    { id:'A005', type:'PPE',           title:'PPE Condition & Issuance Check',  freq:'Monthly',   due:'2026-04-15', status:'upcoming',  plant:'Chakan MIDC', questions: [
+        { section:'Safety Shoes',             q:'Are all workers issued IS 15298 certified safety shoes?'},
+        { section:'Safety Shoes',             q:'Are shoe condition records checked monthly?'},
+        { section:'Eye & Face Protection',    q:'Are welding shields available at all welding stations?'},
+        { section:'Eye & Face Protection',    q:'Are safety goggles available for grinding operations?'},
+        { section:'Hand Protection',          q:'Are heat-resistant gloves available for furnace team?'},
+        { section:'Hearing Protection',       q:'Are earplugs/muffs available in high-noise areas?'},
+    ]},
+  ],
+  docs: [
+    { id:'D001', name:'MPCB Consent to Operate 2021',   folder:'Licences',  type:'pdf',   size:'2.4 MB', date:'2021-04-01', expiry:'2026-03-10', tag:'overdue' },
+    { id:'D002', name:'Factory Licence 2025-26',         folder:'Licences',  type:'pdf',   size:'856 KB', date:'2025-04-05', expiry:'2026-04-05', tag:'due' },
+    { id:'D003', name:'Fire NOC Building A 2025',        folder:'Licences',  type:'pdf',   size:'1.1 MB', date:'2025-03-15', expiry:'2026-03-15', tag:'expired' },
+    { id:'D004', name:'PF Challan Feb 2026',             folder:'PF/ESI',    type:'pdf',   size:'312 KB', date:'2026-02-14', expiry:'—',          tag:'ok' },
+    { id:'D005', name:'ESI Challan Feb 2026',            folder:'PF/ESI',    type:'pdf',   size:'280 KB', date:'2026-02-14', expiry:'—',          tag:'ok' },
+    { id:'D006', name:'Foundry Audit Mar 2026',          folder:'Audits',    type:'pdf',   size:'4.2 MB', date:'2026-03-01', expiry:'—',          tag:'ok' },
+    { id:'D007', name:'IATF Certificate 2024-2027',      folder:'OEM',       type:'pdf',   size:'780 KB', date:'2024-07-15', expiry:'2027-07-15', tag:'ok' },
+    { id:'D008', name:'Boiler Inspection Report 2025',   folder:'Licences',  type:'pdf',   size:'1.8 MB', date:'2025-05-10', expiry:'2026-05-10', tag:'ok' },
+    { id:'D009', name:'PPE Issuance Register Q1 2026',   folder:'Safety',    type:'xlsx',  size:'96 KB',  date:'2026-01-15', expiry:'—',          tag:'ok' },
+    { id:'D010', name:'Bajaj OEM Audit Pack 2025',       folder:'OEM',       type:'zip',   size:'18 MB',  date:'2025-11-20', expiry:'—',          tag:'ok' },
+  ],
+};
+
+/* ─────────────────────────────────────────────────────────
+   ONBOARDING
+───────────────────────────────────────────────────────── */
+let obStep = 1;
+let obSelections = { sector: 'Forging & Casting' };
+
+function selectOption(el, key, val) {
+  el.closest('.option-grid').querySelectorAll('.option-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  obSelections[key] = val;
+}
+
+function nextOnboard(step) {
+  document.getElementById('os' + obStep).classList.remove('active');
+  obStep = step;
+  document.getElementById('os' + obStep).classList.add('active');
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('ps' + i).classList.toggle('done', i <= step);
+  }
+  if (step === 4) runOnboardingLoad();
+}
+
+function runOnboardingLoad() {
+  const items = [
+    'Maharashtra Factories Rules 1963…',
+    'MPCB Consent obligations…',
+    'DISH Factory Licence schedule…',
+    'Foundry safety checklists…',
+    'PF / ESI tracking templates…',
+    'Crane & boiler inspection schedule…',
+    'OEM audit checklist (Bajaj/VW)…',
+    'Fire NOC reminders…',
+    'Labour registers (Form A, G, IX)…',
+    'ISO 45001 audit template…',
+  ];
+  let i = 0;
+  const prog = document.getElementById('ob-progress');
+  const msg  = document.getElementById('ob-msg');
+  const sub  = document.getElementById('ob-sub');
+  const list = document.getElementById('ob-items');
+  msg.textContent = 'Loading compliance pack…';
+  sub.textContent = `Configuring 33 obligations · ${obSelections.sector} · Maharashtra`;
+
+  const iv = setInterval(() => {
+    if (i >= items.length) {
+      clearInterval(iv);
+      prog.style.width = '100%';
+      document.getElementById('ob-icon').textContent = '🎉';
+      msg.textContent = 'Your compliance register is ready!';
+      sub.textContent = '33 obligations loaded · 4 require immediate attention';
+      setTimeout(() => {
+        document.getElementById('onboard-modal').style.display = 'none';
+        showPage('dashboard');
+        showToast('✅ CompliOS configured for ' + obSelections.sector + ' · 33 obligations loaded', 'success');
+      }, 1400);
+      return;
+    }
+    prog.style.width = ((i + 1) / items.length * 100) + '%';
+    list.innerHTML += `<div style="padding:2px 0;opacity:0.7">✓ ${items[i]}</div>`;
+    i++;
+  }, 280);
+}
+
+/* ─────────────────────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────────────────────── */
+function showPage(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard',
+    register:  'Compliance Register',
+    audits:    'Audits & Checklists',
+    actions:   'Actions & Tasks',
+    people:    'People & Training',
+    docs:      'Documents & Evidence',
+    settings:  'Settings',
+  };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  const pages = { dashboard, register, audits, actions, people, docs, settings };
+  if (pages[page]) {
+    content.innerHTML = pages[page]();
+    afterRender(page);
+  }
+}
+
+function afterRender(page) {
+  if (page === 'dashboard') initCalendar();
+}
+
+/* ─────────────────────────────────────────────────────────
+   DASHBOARD
+───────────────────────────────────────────────────────── */
+function dashboard() {
+  const over  = DATA.register.filter(r => r.status === 'overdue').length;
+  const due   = DATA.register.filter(r => r.status === 'due').length;
+  const ok    = DATA.register.filter(r => r.status === 'ok').length;
+  const openA = DATA.actions.filter(a => a.status !== 'done').length;
+
+  return `
+  <div class="fade-up">
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="kpi-tile ok">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-num">${ok}</div>
+        <div class="kpi-label">Licences OK</div>
+        <div class="kpi-sub">No action needed</div>
+      </div>
+      <div class="kpi-tile warn">
+        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-num">${due}</div>
+        <div class="kpi-label">Due / Expiring</div>
+        <div class="kpi-sub">Action required soon</div>
+      </div>
+      <div class="kpi-tile danger">
+        <div class="kpi-icon">🚨</div>
+        <div class="kpi-num">${over}</div>
+        <div class="kpi-label">Overdue / Expired</div>
+        <div class="kpi-sub">Immediate action needed</div>
+      </div>
+      <div class="kpi-tile info">
+        <div class="kpi-icon">⚡</div>
+        <div class="kpi-num">${openA}</div>
+        <div class="kpi-label">Open Actions</div>
+        <div class="kpi-sub">Across all categories</div>
+      </div>
+      <div class="kpi-tile navy">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-num">12</div>
+        <div class="kpi-label">Days to Bajaj Audit</div>
+        <div class="kpi-sub">April 5, 2026</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="dash-grid">
+      <div>
+        <!-- Overdue items -->
+        <div class="card" style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div>
+              <div class="card-title">🚨 Requires Immediate Attention</div>
+              <div class="card-sub">${over} overdue · ${due} due soon</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('register')">View all →</button>
+          </div>
+          ${DATA.register.filter(r => r.status === 'overdue' || (r.status === 'due' && r.daysLeft <= 5)).map(r => `
+          <div class="overdue-item ${r.status === 'overdue' ? 'critical' : 'warning'}" onclick="showRegisterDetail('${r.id}')">
+            <div class="overdue-icon">${r.status === 'overdue' ? '🔴' : '🟡'}</div>
+            <div style="flex:1">
+              <div class="overdue-title">${r.name}</div>
+              <div class="overdue-meta">${r.cat} · ${r.law} · ${r.status === 'overdue' ? 'OVERDUE by ' + Math.abs(r.daysLeft) + ' days' : 'Due in ' + r.daysLeft + ' days'}</div>
+            </div>
+            <div class="overdue-cta">
+              <span class="badge ${r.status === 'overdue' ? 'badge-overdue' : 'badge-due'}">${r.status === 'overdue' ? 'OVERDUE' : r.daysLeft + ' days'}</span>
+            </div>
+          </div>`).join('')}
+        </div>
+
+        <!-- Recent audits -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="card-title">🗓 Upcoming Audits this Month</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('audits')">View all →</button>
+          </div>
+          ${DATA.audits.filter(a => a.status !== 'completed').slice(0,3).map(a => `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--surface-2)">
+            <div style="width:44px;height:44px;border-radius:10px;background:${a.type==='OEM'?'rgba(4,26,51,0.08)':a.type==='Safety/EHS'?'rgba(255,122,26,0.08)':'rgba(0,153,102,0.08)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${a.type==='OEM'?'🏭':a.type==='Safety/EHS'?'🦺':'📋'}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${a.title}</div>
+              <div style="font-size:11px;color:var(--muted);font-family:var(--font-m)">${a.type} · Due ${a.due}</div>
+            </div>
+            <span class="badge ${a.status==='due'?'badge-due':'badge-info'}">${a.status.toUpperCase()}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div>
+        <!-- Calendar -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:14px">📅 March 2026</div>
+          <div class="cal-grid" id="cal-headers"></div>
+          <div class="cal-grid" style="margin-top:6px" id="cal-days"></div>
+        </div>
+
+        <!-- Compliance score -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:16px">📊 Compliance Health Score</div>
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-family:var(--font-d);font-size:48px;font-weight:800;color:var(--amber)">71%</div>
+            <div style="font-size:12px;color:var(--muted)">4 critical items bring score down</div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>Licences & Consents</span><span style="color:var(--red);font-weight:600">60%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill red" style="width:60%"></div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>Safety & EHS</span><span style="color:var(--amber);font-weight:600">78%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill amber" style="width:78%"></div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>PF / ESI</span><span style="color:var(--amber);font-weight:600">75%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill amber" style="width:75%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>OEM / Audits</span><span style="color:var(--green-d);font-weight:600">88%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill green" style="width:88%"></div></div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">⚡ Quick Actions</div>
+          <button class="btn btn-navy" style="width:100%;margin-bottom:8px;justify-content:center" onclick="exportReport()">📤 Export OEM Audit Pack</button>
+          <button class="btn btn-secondary" style="width:100%;margin-bottom:8px;justify-content:center" onclick="showPage('audits')">▶ Start Foundry Audit</button>
+          <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="showToast('WhatsApp report sent to Aman Rajak','success')">💬 Send Daily WhatsApp Report</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function initCalendar() {
+  const headers = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hEl = document.getElementById('cal-headers');
+  const dEl = document.getElementById('cal-days');
+  if (!hEl) return;
+  hEl.innerHTML = headers.map(h => `<div class="cal-header">${h}</div>`).join('');
+  // March 2026 starts on Sunday = 7 (Mon-Sun grid offset 6)
+  const daysInMonth = 31;
+  const startOffset = 6; // March 1, 2026 is Sunday
+  const events = {10: 'red', 13: 'amber', 15: 'amber', 20: 'amber', 31: 'green'};
+  let html = '';
+  for (let i = 0; i < startOffset; i++) html += `<div class="cal-day past"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === 15;
+    const ev = events[d];
+    html += `<div class="cal-day ${isToday?'today':''} ${ev?'has-event event-'+ev:''}" onclick="showToast('March ${d}: ${ev==='red'?'MPCB overdue':ev==='amber'?'Filing/renewal due':'Audit scheduled'}','${ev||'info'}')">${d}</div>`;
+  }
+  dEl.innerHTML = html;
+}
+
+/* ─────────────────────────────────────────────────────────
+   REGISTER
+───────────────────────────────────────────────────────── */
+let activeFilters = { cat: 'All', status: 'All' };
+
+function register() {
+  const cats = ['All','Statutory','Environment','Safety','PF/ESI','OEM'];
+  const statuses = ['All','overdue','due','ok'];
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Compliance Register</div>
+        <div class="page-sub">All obligations · ${DATA.register.length} items · Chakan MIDC</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="exportReport()">📤 Export</button>
+        <button class="btn btn-primary" onclick="showToast('Add obligation form — coming soon','info')">+ Add obligation</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <span style="font-family:var(--font-m);font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Category:</span>
+      ${cats.map(c => `<div class="filter-chip ${activeFilters.cat===c?'active':''}" onclick="filterRegister('cat','${c}')">${c}</div>`).join('')}
+      <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+      <span style="font-family:var(--font-m);font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Status:</span>
+      <div class="filter-chip red ${activeFilters.status==='overdue'?'active':''}" onclick="filterRegister('status','overdue')">🔴 Overdue</div>
+      <div class="filter-chip orange ${activeFilters.status==='due'?'active':''}" onclick="filterRegister('status','due')">🟡 Due</div>
+      <div class="filter-chip green ${activeFilters.status==='ok'?'active':''}" onclick="filterRegister('status','ok')">🟢 OK</div>
+      <div class="filter-chip ${activeFilters.status==='All'&&activeFilters.cat==='All'?'active':''}" onclick="filterRegister('all','All')">Clear filters</div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table" id="register-table">
+        <thead>
+          <tr>
+            <th>Obligation</th>
+            <th>Category</th>
+            <th>Law / Framework</th>
+            <th>Owner</th>
+            <th>Frequency</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody id="register-tbody">
+          ${renderRegisterRows(DATA.register)}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderRegisterRows(rows) {
+  return rows.map(r => `
+  <tr onclick="showRegisterDetail('${r.id}')">
+    <td class="cell-primary">${r.name}</td>
+    <td><span class="badge badge-info">${r.cat}</span></td>
+    <td class="cell-muted">${r.law}</td>
+    <td style="font-size:12px">${r.owner}</td>
+    <td class="cell-mono">${r.freq}</td>
+    <td class="cell-mono">${r.due}</td>
+    <td><span class="badge ${r.status==='overdue'?'badge-overdue':r.status==='due'?'badge-due':'badge-ok'}">${r.status==='overdue'?'OVERDUE':r.status==='due'?'DUE IN '+r.daysLeft+'d':'OK'}</span></td>
+    <td>${r.evidence ? '<span style="color:var(--green-d)">✓ Filed</span>' : '<span style="color:var(--red)">⚠ Missing</span>'}</td>
+  </tr>`).join('');
+}
+
+function filterRegister(key, val) {
+  if (key === 'all') { activeFilters = { cat:'All', status:'All' }; }
+  else { activeFilters[key] = activeFilters[key] === val ? 'All' : val; }
+  let rows = DATA.register;
+  if (activeFilters.cat !== 'All')    rows = rows.filter(r => r.cat === activeFilters.cat);
+  if (activeFilters.status !== 'All') rows = rows.filter(r => r.status === activeFilters.status);
+  const tbody = document.getElementById('register-tbody');
+  if (tbody) tbody.innerHTML = renderRegisterRows(rows);
+  showPage('register');
+}
+
+function showRegisterDetail(id) {
+  const r = DATA.register.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('drawer-title').textContent = r.name;
+  document.getElementById('drawer-sub').textContent = r.cat + ' · ' + r.plant;
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="margin-bottom:20px">
+      <span class="badge ${r.status==='overdue'?'badge-overdue':r.status==='due'?'badge-due':'badge-ok'}" style="font-size:12px;padding:5px 14px">${r.status==='overdue'?'⚠ OVERDUE':r.status==='due'?'⚡ DUE SOON':'✅ COMPLIANT'}</span>
+    </div>
+    <div>
+      ${[
+        ['Category', r.cat],
+        ['Law / Framework', r.law],
+        ['Plant', r.plant],
+        ['Owner', r.owner],
+        ['Renewal Frequency', r.freq],
+        ['Next Due Date', r.due],
+        ['Days Left', r.daysLeft < 0 ? `<span style="color:var(--red);font-weight:700">${Math.abs(r.daysLeft)} days overdue</span>` : r.daysLeft > 100 ? 'Not urgent' : `<span style="color:var(--amber)">${r.daysLeft} days remaining</span>`],
+        ['Potential Fine', `<span style="color:var(--red)">${r.fine}</span>`],
+        ['Evidence on File', r.evidence ? '<span style="color:var(--green-d)">✓ Uploaded</span>' : '<span style="color:var(--red)">⚠ Missing — upload required</span>'],
+        ['Portal Link', `<a href="${r.portal}" target="_blank" style="color:var(--orange);text-decoration:none">${r.portal === '#' ? 'N/A' : '🔗 Open portal'}</a>`],
+      ].map(([l,v]) => `<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    </div>
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">History</div>
+    ${[
+      {date:'Mar 2021', text:'Initial consent obtained. Uploaded to documents.', color:'var(--green-l)'},
+      {date:'Mar 2023', text:'Renewal reminder sent to Aman Rajak (60 days notice).', color:'var(--navy-light)'},
+      {date:'Jan 2026', text:'Renewal process initiated. Application submitted to MPCB portal.', color:'var(--amber-l)'},
+      {date:'Mar 10, 2026', text:'Consent expired. OVERDUE. Renewal pending MPCB inspection.', color:'var(--red-l)'},
+    ].map(h => `<div class="history-item"><div class="history-dot" style="background:${h.color}"></div><div><div class="history-date">${h.date}</div><div class="history-text">${h.text}</div></div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="upload-zone" onclick="showToast('File upload — select document','info')">
+      <div class="upload-zone-icon">📎</div>
+      <div class="upload-zone-text">Drop document here or <strong>click to upload</strong><br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, PNG up to 20MB</span></div>
+    </div>`;
+
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="showToast('Mark as renewed — upload required','info')">✅ Mark as renewed</button>
+    <button class="btn btn-secondary" onclick="showToast('Reminder set for Aman Rajak','success')">📩 Send reminder</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Close</button>`;
+
+  openDrawer();
+}
+
+/* ─────────────────────────────────────────────────────────
+   AUDITS
+───────────────────────────────────────────────────────── */
+function audits() {
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Audits & Checklists</div>
+        <div class="page-sub">${DATA.audits.length} checklists · 2 due this month</div>
+      </div>
+      <button class="btn btn-primary" onclick="showToast('Create custom checklist — coming soon','info')">+ Create checklist</button>
+    </div>
+
+    <div class="audit-cards">
+      ${DATA.audits.map(a => `
+      <div class="audit-card" onclick="openAudit('${a.id}')">
+        <div class="audit-card-type">${a.type}</div>
+        <div class="audit-card-title">${a.title}</div>
+        <div class="audit-card-meta">📅 ${a.freq} · Due: ${a.due} · ${a.plant}</div>
+        <div class="audit-card-footer">
+          <span class="badge ${a.status==='due'?'badge-due':a.status==='completed'?'badge-ok':a.status==='overdue'?'badge-overdue':'badge-pending'}">${a.status.toUpperCase()}</span>
+          ${a.status !== 'completed' && a.questions.length > 0 ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openChecklist('${a.id}')">▶ Start</button>` : a.status==='completed' ? '<span style="font-size:12px;color:var(--green-d)">✓ Completed</span>' : '<span style="font-size:12px;color:var(--muted)">No questions yet</span>'}
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function openAudit(id) {
+  const a = DATA.audits.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('drawer-title').textContent = a.title;
+  document.getElementById('drawer-sub').textContent = a.type + ' · ' + a.freq + ' · ' + a.plant;
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="margin-bottom:16px"><span class="badge ${a.status==='due'?'badge-due':a.status==='completed'?'badge-ok':'badge-pending'}">${a.status.toUpperCase()}</span></div>
+    ${[['Type',a.type],['Plant',a.plant],['Frequency',a.freq],['Next Due',a.due],['Questions',a.questions.length+' items']].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">Sections</div>
+    ${[...new Set(a.questions.map(q=>q.section))].map(s=>`<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px;font-weight:500;color:var(--slate)">📌 ${s}</div>`).join('')}
+  `;
+  document.getElementById('drawer-footer').innerHTML = `
+    ${a.questions.length>0 ? `<button class="btn btn-primary" onclick="closeDrawer();openChecklist('${a.id}')">▶ Start checklist</button>` : ''}
+    <button class="btn btn-secondary" onclick="showToast('Assigned to Ravi Desai','success')">👤 Assign</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Close</button>`;
+  openDrawer();
+}
+
+function openChecklist(id) {
+  const a = DATA.audits.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('modal-title').textContent = a.title;
+  document.getElementById('modal-sub').textContent   = a.type + ' · ' + a.plant + ' · March 2026';
+
+  const sections = [...new Set(a.questions.map(q => q.section))];
+  let html = '';
+  let qIdx = 0;
+  sections.forEach(sec => {
+    const qs = a.questions.filter(q => q.section === sec);
+    html += `<div class="checklist-section"><div class="checklist-section-title">${sec}</div>`;
+    qs.forEach(q => {
+      html += `
+      <div class="checklist-item" id="cq${qIdx}">
+        <div class="checklist-question">${q.q}</div>
+        <div class="checklist-actions">
+          <button class="check-btn yes" onclick="answerQ(${qIdx},'yes',this)" title="Yes / Compliant">Y</button>
+          <button class="check-btn no"  onclick="answerQ(${qIdx},'no',this)"  title="No / Non-compliant">N</button>
+          <button class="check-btn na"  onclick="answerQ(${qIdx},'na',this)"  title="Not Applicable">NA</button>
+        </div>
+      </div>`;
+      qIdx++;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('checklist-modal').classList.add('open');
+  window.totalQs = a.questions.length;
+  window.answeredQs = {};
+  updateModalScore();
+}
+
+function answerQ(idx, ans, btn) {
+  const row = document.getElementById('cq' + idx);
+  row.querySelectorAll('.check-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  window.answeredQs[idx] = ans;
+  updateModalScore();
+}
+
+function updateModalScore() {
+  const total = window.totalQs || 0;
+  const answered = Object.keys(window.answeredQs || {}).length;
+  const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
+  document.getElementById('modal-score').innerHTML = `
+    <span>${answered} / ${total} answered</span>
+    ${nos > 0 ? `<span style="color:var(--red);margin-left:12px">⚠ ${nos} NC${nos>1?'s':''} found</span>` : ''}`;
+}
+
+function closeModal() {
+  document.getElementById('checklist-modal').classList.remove('open');
+}
+
+function submitChecklist() {
+  const answered = Object.keys(window.answeredQs || {}).length;
+  const total    = window.totalQs || 1;
+  if (answered < total * 0.5) {
+    showToast('Please answer at least 50% of questions', 'warning');
+    return;
+  }
+  const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
+  closeModal();
+  showToast(`✅ Audit submitted! ${nos} action${nos!==1?'s':''} auto-created for non-compliances`, 'success');
+  if (nos > 0) {
+    DATA.actions.unshift({
+      id: Date.now(), title: `Fix ${nos} audit finding${nos>1?'s':''}`, linked:'Audit submission',
+      owner:'AR', due:'2026-03-31', status:'open', priority:'high'
+    });
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ACTIONS
+───────────────────────────────────────────────────────── */
+function actions() {
+  const overdue = DATA.actions.filter(a => a.status === 'overdue');
+  const open    = DATA.actions.filter(a => a.status === 'open');
+  const done    = DATA.actions.filter(a => a.status === 'done');
+
+  function actionCard(a) {
+    return `
+    <div class="action-card ${a.priority}" onclick="showActionDetail(${a.id})">
+      <div class="action-title">${a.title}</div>
+      <div class="action-linked">🔗 ${a.linked}</div>
+      <div class="action-footer">
+        <div class="action-avatar">${a.owner}</div>
+        <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()}</span>
+        <div class="action-due">${a.due}</div>
+      </div>
+    </div>`;
+  }
+
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Actions & Tasks</div>
+        <div class="page-sub">${DATA.actions.filter(a=>a.status!=='done').length} open · ${done.length} done</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:4px;background:var(--surface-2);border-radius:10px;padding:4px">
+          <div class="people-tab active" onclick="this.parentElement.querySelectorAll('.people-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Kanban</div>
+          <div class="people-tab" onclick="showPage('actions');this.parentElement.querySelectorAll('.people-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">List</div>
+        </div>
+        <button class="btn btn-primary" onclick="showToast('Create action form — coming soon','info')">+ Add action</button>
+      </div>
+    </div>
+
+    <div class="kanban">
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--red-l)"></div>
+          <div class="kanban-col-title">Overdue</div>
+          <div class="kanban-count badge-red">${overdue.length}</div>
+        </div>
+        ${overdue.map(a => actionCard(a)).join('')}
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--amber-l)"></div>
+          <div class="kanban-col-title">Open</div>
+          <div class="kanban-count badge-amber">${open.length}</div>
+        </div>
+        ${open.map(a => actionCard(a)).join('')}
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--green-l)"></div>
+          <div class="kanban-col-title">Completed</div>
+          <div class="kanban-count badge-green">${done.length}</div>
+        </div>
+        ${done.map(a => actionCard(a)).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function showActionDetail(id) {
+  const a = DATA.actions.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('drawer-title').textContent = a.title;
+  document.getElementById('drawer-sub').textContent = 'Action · ' + a.priority + ' priority';
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="margin-bottom:16px">
+      <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()} PRIORITY</span>
+    </div>
+    ${[['Linked to',a.linked],['Assigned to',a.owner],['Due date',a.due],['Status',a.status.toUpperCase()]].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="upload-zone" onclick="showToast('Upload evidence for this action','info')">
+      <div class="upload-zone-icon">📎</div>
+      <div class="upload-zone-text">Attach evidence / photo<br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, PNG up to 20MB</span></div>
+    </div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="markActionDone(${a.id})">✅ Mark complete</button>
+    <button class="btn btn-secondary" onclick="showToast('Reminder sent to ' + '${a.owner}','success')">📩 Remind</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Close</button>`;
+  openDrawer();
+}
+
+function markActionDone(id) {
+  const a = DATA.actions.find(x => x.id === id);
+  if (a) a.status = 'done';
+  closeDrawer();
+  showToast('✅ Action marked complete', 'success');
+  showPage('actions');
+}
+
+/* ─────────────────────────────────────────────────────────
+   PEOPLE & TRAINING
+───────────────────────────────────────────────────────── */
+const trainings = ['Induction','PPE','Hot Work','Crane OHC','Fire Safety','First Aid','Foundry Safety'];
+
+function people() {
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">People & Training</div>
+        <div class="page-sub">${DATA.people.length} employees · PF/ESI tracking enabled</div>
+      </div>
+      <button class="btn btn-primary" onclick="showToast('Add employee form — coming soon','info')">+ Add employee</button>
+    </div>
+
+    <div class="people-tabs">
+      <div class="people-tab active" id="tab-employees" onclick="switchPeopleTab('employees')">Employee Register</div>
+      <div class="people-tab" id="tab-training" onclick="switchPeopleTab('training')">Training Matrix</div>
+      <div class="people-tab" id="tab-pfesi" onclick="switchPeopleTab('pfesi')">PF / ESI Status</div>
+    </div>
+
+    <div id="people-content">
+      ${peopleEmployees()}
+    </div>
+  </div>`;
+}
+
+function switchPeopleTab(tab) {
+  document.querySelectorAll('.people-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const map = { employees: peopleEmployees, training: peopleTraining, pfesi: peoplePFESI };
+  document.getElementById('people-content').innerHTML = (map[tab] || peopleEmployees)();
+}
+
+function peopleEmployees() {
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead><tr>
+        <th>Employee</th><th>Dept</th><th>Role</th><th>PF</th><th>ESI</th><th>UAN</th><th>Last Medical</th><th>Trainings</th>
+      </tr></thead>
+      <tbody>
+        ${DATA.people.map(p => `
+        <tr onclick="showPersonDetail('${p.id}')">
+          <td class="cell-primary">${p.name}<br/><span class="cell-muted" style="font-family:var(--font-m)">${p.id}</span></td>
+          <td>${p.dept}</td>
+          <td style="font-size:12px">${p.role}</td>
+          <td>${p.pf ? '<span style="color:var(--green-d)">✓</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+          <td>${p.esi ? '<span style="color:var(--green-d)">✓</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+          <td class="cell-mono">${p.uan || '<span style="color:var(--red)">⚠ Missing</span>'}</td>
+          <td class="cell-mono" style="font-size:11px">${p.medical}</td>
+          <td><span class="badge badge-info">${p.trainings.length} done</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function peopleTraining() {
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <div class="matrix-scroll">
+      <table class="matrix-table">
+        <thead><tr>
+          <th style="text-align:left;padding-left:16px;min-width:140px">Employee</th>
+          ${trainings.map(t => `<th>${t}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${DATA.people.map(p => `
+          <tr>
+            <td style="padding-left:16px"><div style="font-size:13px;font-weight:600;color:var(--charcoal)">${p.name}</div><div style="font-size:10px;color:var(--muted);font-family:var(--font-m)">${p.dept}</div></td>
+            ${trainings.map(t => {
+              const done = p.trainings.includes(t);
+              return `<td><div class="matrix-cell ${done?'mc-done':'mc-miss'}" title="${done?'Completed':'Not done'}">${done?'✅':'❌'}</div></td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function peoplePFESI() {
+  return `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    ${[
+      {title:'PF Status', icon:'💼', ok:DATA.people.filter(p=>p.pf).length, issue:DATA.people.filter(p=>p.pf&&!p.uan).length, label:'employees with PF applicable', warn:'UAN missing'},
+      {title:'ESI Status', icon:'🏥', ok:DATA.people.filter(p=>p.esi).length, issue:DATA.people.filter(p=>p.esi&&!p.ip).length, label:'employees with ESI applicable', warn:'IP number missing'},
+    ].map(s => `
+    <div class="kpi-tile ${s.issue?'warn':'ok'}">
+      <div class="kpi-icon">${s.icon}</div>
+      <div class="kpi-num">${s.ok}</div>
+      <div class="kpi-label">${s.label}</div>
+      ${s.issue ? `<div class="kpi-sub" style="color:var(--red)">⚠ ${s.issue} ${s.warn}</div>` : '<div class="kpi-sub">All records complete</div>'}
+    </div>`).join('')}
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead><tr><th>Employee</th><th>PF Applicable</th><th>UAN</th><th>ESI Applicable</th><th>IP Number</th><th>Status</th></tr></thead>
+      <tbody>
+        ${DATA.people.map(p => `
+        <tr>
+          <td class="cell-primary">${p.name}</td>
+          <td>${p.pf ? '<span style="color:var(--green-d)">✓ Yes</span>' : '—'}</td>
+          <td class="cell-mono">${p.uan || (p.pf ? '<span style="color:var(--red);font-size:11px">⚠ Missing</span>' : '—')}</td>
+          <td>${p.esi ? '<span style="color:var(--green-d)">✓ Yes</span>' : '—'}</td>
+          <td class="cell-mono">${p.ip || (p.esi ? '<span style="color:var(--red);font-size:11px">⚠ Missing</span>' : '—')}</td>
+          <td><span class="badge ${(!p.pf||p.uan)&&(!p.esi||p.ip)?'badge-ok':'badge-overdue'}">${(!p.pf||p.uan)&&(!p.esi||p.ip)?'Complete':'⚠ Action needed'}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function showPersonDetail(id) {
+  const p = DATA.people.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('drawer-title').textContent = p.name;
+  document.getElementById('drawer-sub').textContent = p.role + ' · ' + p.dept;
+  document.getElementById('drawer-body').innerHTML = `
+    ${[['Employee ID',p.id],['Department',p.dept],['Role',p.role],['PF Applicable',p.pf?'Yes':'No'],['UAN',p.uan||'<span style="color:var(--red)">⚠ Missing</span>'],['ESI Applicable',p.esi?'Yes':'No'],['IP Number',p.ip||'—'],['Last Medical',p.medical]].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">Training Completed</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${trainings.map(t => `<span class="badge ${p.trainings.includes(t)?'badge-ok':'badge-pending'}">${p.trainings.includes(t)?'✓':''} ${t}</span>`).join('')}
+    </div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="showToast('Training assignment — coming soon','info')">+ Assign training</button>
+    <button class="btn btn-secondary" onclick="showToast('Employee record updated','success')">💾 Edit record</button>`;
+  openDrawer();
+}
+
+/* ─────────────────────────────────────────────────────────
+   DOCUMENTS
+───────────────────────────────────────────────────────── */
+let activeFolder = 'All';
+const folders = ['All','Licences','PF/ESI','Audits','OEM','Safety','Accidents'];
+
+function docs() {
+  const filteredDocs = activeFolder === 'All' ? DATA.docs : DATA.docs.filter(d => d.folder === activeFolder);
+  const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
+
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Documents & Evidence</div>
+        <div class="page-sub">${DATA.docs.length} files · Organised by plant and category</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')">🔍 Search</button>
+        <button class="btn btn-primary" onclick="showToast('Upload document — select file','info')">+ Upload</button>
+      </div>
+    </div>
+
+    <div class="doc-grid">
+      <div class="doc-tree">
+        ${folders.map(f => `
+        <div class="doc-tree-item ${activeFolder===f?'active':''} ${f!=='All'?'sub':''}" onclick="switchFolder('${f}')">
+          <span>${f==='All'?'🗂':f==='Licences'?'📋':f==='PF/ESI'?'💼':f==='Audits'?'✅':f==='OEM'?'🏭':f==='Safety'?'🦺':'⚠'}</span>
+          ${f}
+          <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?DATA.docs.length:DATA.docs.filter(d=>d.folder===f).length}</span>
+        </div>`).join('')}
+      </div>
+
+      <div class="doc-list">
+        ${filteredDocs.map(d => `
+        <div class="doc-item" onclick="showDocDetail('${d.id}')">
+          <div class="doc-icon">${typeIcons[d.type]||'📄'}</div>
+          <div style="flex:1">
+            <div class="doc-name">${d.name}</div>
+            <div class="doc-meta">${d.folder} · ${d.size} · ${d.date}${d.expiry!=='—'?' · Expires: '+d.expiry:''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge ${d.tag==='overdue'?'badge-overdue':d.tag==='due'?'badge-due':d.tag==='expired'?'badge-overdue':'badge-ok'}">${d.tag.toUpperCase()}</span>
+            <div class="doc-actions">
+              <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();showToast('Downloading '+this.closest('.doc-item').querySelector('.doc-name').textContent,'info')">↓</button>
+            </div>
+          </div>
+        </div>`).join('')}
+
+        <div class="upload-zone" onclick="showToast('Upload document — select file','info')">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-text">Drop files here or <strong>click to upload</strong><br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, XLSX up to 50MB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function switchFolder(folder) {
+  activeFolder = folder;
+  showPage('docs');
+}
+
+function showDocDetail(id) {
+  const d = DATA.docs.find(x => x.id === id);
+  if (!d) return;
+  const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
+  document.getElementById('drawer-title').textContent = d.name;
+  document.getElementById('drawer-sub').textContent = d.folder + ' · ' + d.size;
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="text-align:center;margin:20px 0">
+      <div style="font-size:64px">${typeIcons[d.type]||'📄'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--font-m)">${d.name}</div>
+    </div>
+    <div class="divider"></div>
+    ${[['Folder',d.folder],['File size',d.size],['Uploaded',d.date],['Expiry',d.expiry],['Status','<span class="badge '+( d.tag==='ok'?'badge-ok':d.tag==='due'?'badge-due':'badge-overdue')+'">'+d.tag.toUpperCase()+'</span>']].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">Version history</div>
+    <div class="history-item"><div class="history-dot" style="background:var(--green-l)"></div><div><div class="history-date">Current version · ${d.date}</div><div class="history-text">${d.name}</div></div></div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-navy" onclick="showToast('Downloading '+' — '+'${d.name}','info')">↓ Download</button>
+    <button class="btn btn-secondary" onclick="showToast('Document replaced — upload new version','info')">⬆ Replace</button>
+    <button class="btn btn-danger btn-sm" onclick="showToast('Document archived','warning')">🗑 Archive</button>`;
+  openDrawer();
+}
+
+/* ─────────────────────────────────────────────────────────
+   SETTINGS
+───────────────────────────────────────────────────────── */
+function settings() {
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div class="page-title">Settings</div>
+      <div class="page-sub">Manage plants, frameworks, users and notifications</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      ${[
+        {icon:'🏭',title:'Plants & Locations',sub:'Chakan MIDC · 1 plant · Add new plant',btn:'Manage plants'},
+        {icon:'⚖️',title:'Compliance Frameworks',sub:'33 obligations active · Maharashtra templates',btn:'Edit frameworks'},
+        {icon:'👥',title:'Users & Roles',sub:'4 users · Admin, Manager, Checker, Viewer',btn:'Manage users'},
+        {icon:'🔔',title:'Notifications & Reminders',sub:'Email + WhatsApp · 60/30/15 day lead times',btn:'Configure'},
+        {icon:'📊',title:'Report Templates',sub:'OEM pack, Statutory report, PF/ESI summary',btn:'Edit templates'},
+        {icon:'🔌',title:'Integrations',sub:'WhatsApp, Email (SendGrid), Storage (S3)',btn:'Connect'},
+      ].map(s => `
+      <div class="card" style="display:flex;align-items:flex-start;gap:16px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(4,26,51,0.07);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${s.icon}</div>
+        <div style="flex:1">
+          <div class="card-title">${s.title}</div>
+          <div class="card-sub" style="margin-top:3px;margin-bottom:12px">${s.sub}</div>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('${s.btn} — coming soon','info')">${s.btn} →</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   DRAWER UTILS
+───────────────────────────────────────────────────────── */
+function openDrawer() {
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+/* ─────────────────────────────────────────────────────────
+   NOTIFICATIONS
+───────────────────────────────────────────────────────── */
+function toggleNotif() {
+  document.getElementById('notif-panel').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notif-panel');
+  const btn   = e.target.closest('.topbar-icon-btn');
+  if (!panel.contains(e.target) && !btn) panel.classList.remove('open');
+});
+
+/* ─────────────────────────────────────────────────────────
+   TOAST
+───────────────────────────────────────────────────────── */
+function showToast(msg, type='info') {
+  const icons = { success:'✅', warning:'⚠️', error:'❌', info:'ℹ️' };
+  const tc = document.getElementById('toast-container');
+  const t  = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ─────────────────────────────────────────────────────────
+   EXPORT
+───────────────────────────────────────────────────────── */
+function exportReport() {
+  showToast('📤 Generating statutory compliance report…','info');
+  setTimeout(()=>showToast('✅ Report exported: CompliOS_Statutory_Mar2026.pdf','success'),1800);
+}
+
+/* ─────────────────────────────────────────────────────────
+   GLOBAL SEARCH
+───────────────────────────────────────────────────────── */
+function globalSearch(q) {
+  if (!q || q.length < 2) return;
+  const results = DATA.register.filter(r =>
+    r.name.toLowerCase().includes(q.toLowerCase()) ||
+    r.cat.toLowerCase().includes(q.toLowerCase())
+  );
+  if (results.length > 0) {
+    showToast(`Found ${results.length} result(s) for "${q}" — showing register`, 'info');
+    showPage('register');
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────────────────── */
+// Start with onboarding, then show dashboard after
+// (modal auto-triggers, dashboard shown after completion)
+</script>
+</body>
+</html>
+
