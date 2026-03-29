@@ -290,6 +290,19 @@ body {
   position: relative;
 }
 .topbar-icon-btn:hover { background: var(--surface-2); }
+.topbar-icon-btn .ui-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.topbar-icon-btn .ui-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 .notif-dot {
   position: absolute;
   top: 6px; right: 7px;
@@ -457,8 +470,23 @@ body {
 
 .kpi-icon { width: 26px; height: 26px; margin-bottom: 10px; color: var(--muted); display: flex; align-items: center; justify-content: center; }
 .kpi-icon svg { width: 100%; height: 100%; display: block; }
-.search-icon { width: 18px; height: 18px; color: #B9BDC2; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.search-icon { width: 20px; height: 20px; color: var(--charcoal); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .search-icon svg { width: 100%; height: 100%; display: block; }
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.btn-icon.navy { color: var(--navy); }
+.btn-icon.light { color: var(--surface); }
 .kpi-num {
   font-family: var(--font-d);
   font-size: 32px;
@@ -1388,14 +1416,14 @@ body {
   <div id="topbar">
     <div class="topbar-title" id="topbar-title">Dashboard</div>
     <div class="topbar-search">
-      <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>
       <input type="text" placeholder="Search licences, audits, actions…" id="global-search" oninput="globalSearch(this.value)"/>
     </div>
     <div class="topbar-icon-btn" onclick="toggleNotif()" data-tip="Notifications">
-      🔔
+      <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18H15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M7.5 17.5H16.5V11.2C16.5 8.6 14.6 6.4 12 6.1C9.4 6.4 7.5 8.6 7.5 11.2V17.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10.3 18C10.5 19.1 11.2 19.8 12 19.8C12.8 19.8 13.5 19.1 13.7 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
       <div class="notif-dot"></div>
     </div>
-    <div class="topbar-icon-btn" data-tip="Export report" onclick="exportReport()">📤</div>
+    <div class="topbar-icon-btn" data-tip="Export report" onclick="exportReport()"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M8.5 8.5L12 4.8L15.5 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 14.5V18.2C5 19 5.7 19.7 6.5 19.7H17.5C18.3 19.7 19 19 19 18.2V14.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div>
     <button class="topbar-btn" onclick="showPage('register')">+ Add obligation</button>
   </div>
 
@@ -1735,9 +1763,9 @@ function dashboard() {
         <!-- Quick actions -->
         <div class="card">
           <div class="card-title" style="margin-bottom:12px">Quick Actions</div>
-          <button class="btn btn-navy" style="width:100%;margin-bottom:8px;justify-content:center" onclick="exportReport()">📤 Export OEM Audit Pack</button>
-          <button class="btn btn-secondary" style="width:100%;margin-bottom:8px;justify-content:center" onclick="showPage('audits')">▶ Start Foundry Audit</button>
-          <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="showToast('WhatsApp report sent to Aman Rajak','success')">💬 Send Daily WhatsApp Report</button>
+          <button class="btn btn-navy" style="width:100%;margin-bottom:8px;justify-content:center" onclick="exportReport()"><span class="btn-icon light" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M8.5 8.5L12 4.8L15.5 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 14.5V18.2C5 19 5.7 19.7 6.5 19.7H17.5C18.3 19.7 19 19 19 18.2V14.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>Export OEM Audit Pack</button>
+          <button class="btn btn-secondary" style="width:100%;margin-bottom:8px;justify-content:center" onclick="showPage('audits')"><span class="btn-icon navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 6.8C8 5.9 9 5.4 9.8 5.9L17 10.3C17.8 10.8 17.8 12 17 12.5L9.8 16.9C9 17.4 8 16.9 8 16V6.8Z"/></svg></span>Start Foundry Audit</button>
+          <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="showToast('WhatsApp report sent to Aman Rajak','success')"><span class="btn-icon navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L6.9 14.7C6.1 13.8 5.7 12.7 5.7 11.5C5.7 8.4 8.4 6 12 6C15.6 6 18.3 8.4 18.3 11.5C18.3 14.6 15.6 17 12 17C10.8 17 9.7 16.7 8.7 16.1L6 18Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.7 11.3H14.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Send Daily WhatsApp Report</button>
         </div>
       </div>
     </div>
@@ -2277,7 +2305,7 @@ function docs() {
         <div class="page-sub">${DATA.docs.length} files · Organised by plant and category</div>
       </div>
       <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')"><span class="search-icon" aria-hidden="true" style="margin-right:6px"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Search</button>
+        <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')"><span class="search-icon" aria-hidden="true" style="margin-right:6px"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>Search</button>
         <button class="btn btn-primary" onclick="showToast('Upload document — select file','info')">+ Upload</button>
       </div>
     </div>
