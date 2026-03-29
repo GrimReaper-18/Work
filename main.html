@@ -1028,6 +1028,18 @@ body {
   text-align: center;
 }
 .onboard-logo span { color: var(--orange); }
+#ob-icon {
+  width: 78px;
+  height: 78px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+}
+#ob-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 .onboard-step { display: none; }
 .onboard-step.active { display: block; }
 .onboard-h { font-family: var(--font-d); font-size: 20px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
@@ -1252,7 +1264,7 @@ body {
     <!-- Step 4: Loading -->
     <div class="onboard-step" id="os4">
       <div style="text-align:center;padding:20px 0">
-        <div style="font-size:48px;margin-bottom:16px" id="ob-icon">🏭</div>
+        <div id="ob-icon" aria-hidden="true"></div>
         <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
         <div class="onboard-p" id="ob-sub">Configuring 33 obligations for Forging & Casting · Maharashtra</div>
         <div class="prog-bar" style="margin:24px 0">
@@ -1540,6 +1552,41 @@ const DATA = {
 let obStep = 1;
 let obSelections = { sector: 'Forging & Casting' };
 
+function setOnboardingIcon(type = 'loading') {
+  const icon = document.getElementById('ob-icon');
+  if (!icon) return;
+  if (type === 'success') {
+    icon.innerHTML = `
+      <svg viewBox="0 0 78 78" role="img" aria-label="Complete">
+        <defs>
+          <linearGradient id="obSuccessBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#C6AC8F"></stop>
+            <stop offset="100%" stop-color="#5E503F"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="39" cy="39" r="36" fill="url(#obSuccessBg)" opacity="0.22"></circle>
+        <circle cx="39" cy="39" r="27" fill="none" stroke="#5E503F" stroke-width="2.5"></circle>
+        <path d="M27 39.5l8 8 16-16" fill="none" stroke="#22333B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    `;
+    return;
+  }
+  icon.innerHTML = `
+    <svg viewBox="0 0 78 78" role="img" aria-label="Setup in progress">
+      <defs>
+        <linearGradient id="obLoadBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#22333B"></stop>
+          <stop offset="100%" stop-color="#5E503F"></stop>
+        </linearGradient>
+      </defs>
+      <circle cx="39" cy="39" r="36" fill="#EAE0D5"></circle>
+      <circle cx="39" cy="39" r="28" fill="none" stroke="url(#obLoadBg)" stroke-width="2.5"></circle>
+      <path d="M26 47V31l13-6 13 6v16" fill="none" stroke="#5E503F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M33 42h12M33 36h8" stroke="#22333B" stroke-width="2.6" stroke-linecap="round"></path>
+    </svg>
+  `;
+}
+
 function selectOption(el, key, val) {
   el.closest('.option-grid').querySelectorAll('.option-btn').forEach(b => b.classList.remove('sel'));
   el.classList.add('sel');
@@ -1574,6 +1621,7 @@ function runOnboardingLoad() {
   const msg  = document.getElementById('ob-msg');
   const sub  = document.getElementById('ob-sub');
   const list = document.getElementById('ob-items');
+  setOnboardingIcon('loading');
   msg.textContent = 'Loading compliance pack…';
   sub.textContent = `Configuring 33 obligations · ${obSelections.sector} · Maharashtra`;
 
@@ -1581,7 +1629,7 @@ function runOnboardingLoad() {
     if (i >= items.length) {
       clearInterval(iv);
       prog.style.width = '100%';
-      document.getElementById('ob-icon').textContent = '✅';
+      setOnboardingIcon('success');
       msg.textContent = 'Your compliance register is ready!';
       sub.textContent = '33 obligations loaded · 4 require immediate attention';
       setTimeout(() => {
