@@ -1765,6 +1765,23 @@ function initCalendar() {
    REGISTER
 ───────────────────────────────────────────────────────── */
 let activeFilters = { cat: 'All', status: 'All' };
+let activeSearchQuery = '';
+
+function getRegisterRows() {
+  let rows = DATA.register;
+  if (activeFilters.cat !== 'All')    rows = rows.filter(r => r.cat === activeFilters.cat);
+  if (activeFilters.status !== 'All') rows = rows.filter(r => r.status === activeFilters.status);
+  if (activeSearchQuery) {
+    const q = activeSearchQuery.toLowerCase();
+    rows = rows.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.cat.toLowerCase().includes(q) ||
+      r.law.toLowerCase().includes(q) ||
+      r.owner.toLowerCase().includes(q)
+    );
+  }
+  return rows;
+}
 
 function register() {
   const cats = ['All','Statutory','Environment','Safety','PF/ESI','OEM'];
@@ -1808,7 +1825,7 @@ function register() {
           </tr>
         </thead>
         <tbody id="register-tbody">
-          ${renderRegisterRows(DATA.register)}
+          ${renderRegisterRows(getRegisterRows())}
         </tbody>
       </table>
     </div>
@@ -1816,6 +1833,14 @@ function register() {
 }
 
 function renderRegisterRows(rows) {
+  if (!rows.length) {
+    return `
+    <tr>
+      <td colspan="8" style="padding:22px;text-align:center;color:var(--muted)">
+        No matching obligations found. Try a different search or clear filters.
+      </td>
+    </tr>`;
+  }
   return rows.map(r => `
   <tr onclick="showRegisterDetail('${r.id}')">
     <td class="cell-primary">${r.name}</td>
@@ -1832,9 +1857,7 @@ function renderRegisterRows(rows) {
 function filterRegister(key, val) {
   if (key === 'all') { activeFilters = { cat:'All', status:'All' }; }
   else { activeFilters[key] = activeFilters[key] === val ? 'All' : val; }
-  let rows = DATA.register;
-  if (activeFilters.cat !== 'All')    rows = rows.filter(r => r.cat === activeFilters.cat);
-  if (activeFilters.status !== 'All') rows = rows.filter(r => r.status === activeFilters.status);
+  const rows = getRegisterRows();
   const tbody = document.getElementById('register-tbody');
   if (tbody) tbody.innerHTML = renderRegisterRows(rows);
   showPage('register');
@@ -2399,15 +2422,10 @@ function exportReport() {
    GLOBAL SEARCH
 ───────────────────────────────────────────────────────── */
 function globalSearch(q) {
-  if (!q || q.length < 2) return;
-  const results = DATA.register.filter(r =>
-    r.name.toLowerCase().includes(q.toLowerCase()) ||
-    r.cat.toLowerCase().includes(q.toLowerCase())
-  );
-  if (results.length > 0) {
-    showToast(`Found ${results.length} result(s) for "${q}" — showing register`, 'info');
-    showPage('register');
-  }
+  activeSearchQuery = (q || '').trim();
+  const tbody = document.getElementById('register-tbody');
+  if (tbody) tbody.innerHTML = renderRegisterRows(getRegisterRows());
+  showPage('register');
 }
 
 /* ─────────────────────────────────────────────────────────
