@@ -1252,7 +1252,7 @@ body {
     <!-- Step 4: Loading -->
     <div class="onboard-step" id="os4">
       <div style="text-align:center;padding:20px 0">
-        <div style="font-size:48px;margin-bottom:16px" id="ob-icon">⏳</div>
+        <div style="font-size:48px;margin-bottom:16px" id="ob-icon">🏭</div>
         <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
         <div class="onboard-p" id="ob-sub">Configuring 33 obligations for Forging & Casting · Maharashtra</div>
         <div class="prog-bar" style="margin:24px 0">
@@ -1581,7 +1581,7 @@ function runOnboardingLoad() {
     if (i >= items.length) {
       clearInterval(iv);
       prog.style.width = '100%';
-      document.getElementById('ob-icon').textContent = '🎉';
+      document.getElementById('ob-icon').textContent = '✅';
       msg.textContent = 'Your compliance register is ready!';
       sub.textContent = '33 obligations loaded · 4 require immediate attention';
       setTimeout(() => {
@@ -1958,7 +1958,7 @@ function audits() {
       <div class="audit-card" onclick="openAudit('${a.id}')">
         <div class="audit-card-type">${a.type}</div>
         <div class="audit-card-title">${a.title}</div>
-        <div class="audit-card-meta">📅 ${a.freq} · Due: ${a.due} · ${a.plant}</div>
+        <div class="audit-card-meta">📋 ${a.freq} · Due: ${a.due} · ${a.plant}</div>
         <div class="audit-card-footer">
           <span class="badge ${a.status==='due'?'badge-due':a.status==='completed'?'badge-ok':a.status==='overdue'?'badge-overdue':'badge-pending'}">${a.status.toUpperCase()}</span>
           ${a.status !== 'completed' && a.questions.length > 0 ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openChecklist('${a.id}')">▶ Start</button>` : a.status==='completed' ? '<span style="font-size:12px;color:var(--green-d)">✓ Completed</span>' : '<span style="font-size:12px;color:var(--muted)">No questions yet</span>'}
