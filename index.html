@@ -1,1 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompliOS — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #22333b;
+      --brown: #5e503f;
+      --sand: #c6ac8f;
+      --paper: #eae0d5;
+      --paper-2: #f3ece4;
+      --ink: #0a0908;
+      --white: #fff;
+      --line: #d8cab9;
+      --accent: #c6ac8f;
+      --radius-xl: 22px;
+      --radius-md: 12px;
+      --shadow: 0 20px 40px rgba(34, 51, 59, 0.18);
+    }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.35), transparent 34%),
+        radial-gradient(circle at 82% 8%, rgba(255, 255, 255, 0.24), transparent 28%),
+        #d6e0f1;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+    }
+
+    .leaf-pattern {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        radial-gradient(circle at 80% 16%, transparent 0 52px, #8fa5c8 53px 55px, transparent 56px),
+        radial-gradient(circle at 90% 26%, transparent 0 34px, #8fa5c8 35px 36px, transparent 37px),
+        linear-gradient(145deg, transparent 45%, #8fa5c8 45% 46%, transparent 47%);
+    }
+
+    .login-shell {
+      width: min(1420px, 100%);
+      min-height: min(86vh, 860px);
+      background: var(--paper-2);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-mark {
+      position: absolute;
+      top: 28px;
+      left: 34px;
+      font-family: 'Syne', sans-serif;
+      font-size: 29px;
+      font-weight: 800;
+      color: #0e544f;
+      letter-spacing: -0.05em;
+    }
+
+    .illustration-pane {
+      padding: 84px 52px 42px;
+      display: grid;
+      place-items: center;
+      border-right: 1px solid var(--line);
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0));
+    }
+
+    .art {
+      width: min(620px, 95%);
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      background: #f5efea;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(94, 80, 63, 0.18);
+    }
+
+    .art svg { width: 88%; height: 88%; }
+
+    .form-pane {
+      padding: 84px 72px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 3vw, 3rem);
+      color: #114642;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--brown);
+      font-size: 1.15rem;
+      max-width: 470px;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      width: 100%;
+      border: 1px solid #bca98f;
+      background: #f8f3ee;
+      border-radius: 10px;
+      height: 54px;
+      padding: 0 16px;
+      font-size: 1rem;
+      color: var(--navy);
+      outline: none;
+    }
+
+    .field:focus {
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(34, 51, 59, 0.12);
+    }
+
+    .inline-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.98rem;
+      color: var(--brown);
+      margin-top: -4px;
+      margin-bottom: 6px;
+    }
+
+    .inline-row a {
+      color: var(--navy);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .check input { accent-color: var(--brown); }
+
+    .btn {
+      height: 56px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--brown), var(--sand));
+      color: var(--paper-2);
+      font-size: 1.12rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #826f57;
+      font-size: 0.92rem;
+      margin-top: 8px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: #ccbba2;
+    }
+
+    .socials {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .social {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      border: 0;
+      background: #245650;
+      color: var(--white);
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .signup {
+      text-align: center;
+      color: #7e6d57;
+      margin-top: 14px;
+      font-size: 1.02rem;
+    }
+
+    .signup a {
+      color: #114642;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    @media (max-width: 1060px) {
+      .login-shell { grid-template-columns: 1fr; }
+      .illustration-pane { display: none; }
+      .form-pane { padding: 84px 26px 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="leaf-pattern"></div>
+
+  <main class="login-shell" role="main">
+    <div class="brand-mark">m</div>
+
+    <section class="illustration-pane" aria-hidden="true">
+      <div class="art">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <style>
+              .s{stroke:#3a3564;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;fill:none}
+            </style>
+          </defs>
+          <circle cx="255" cy="135" r="52" fill="#3fb274" class="s"/>
+          <circle cx="165" cy="238" r="45" fill="#f5be2d" class="s"/>
+          <circle cx="334" cy="306" r="39" fill="#98b04d" class="s"/>
+          <circle cx="238" cy="422" r="46" fill="#ef5a63" class="s"/>
+          <path d="M210 188c60 34 84 64 80 127" class="s"/>
+          <path d="M262 177c-52 64-90 92-81 169" class="s"/>
+          <path d="M196 271c55-6 89 5 137 24" class="s"/>
+          <path d="M182 478h210" class="s"/>
+          <circle cx="246" cy="139" r="6" fill="#1f244f"/>
+          <circle cx="273" cy="155" r="6" fill="#1f244f"/>
+          <path d="M240 171c10 14 34 14 44 0" class="s"/>
+          <circle cx="153" cy="238" r="6" fill="#1f244f"/>
+          <circle cx="184" cy="246" r="6" fill="#1f244f"/>
+          <path d="M150 258c12 12 30 12 41 0" class="s"/>
+          <circle cx="325" cy="302" r="5" fill="#1f244f"/>
+          <circle cx="348" cy="307" r="5" fill="#1f244f"/>
+          <path d="M324 322c10 10 26 10 36 0" class="s"/>
+          <circle cx="224" cy="412" r="6" fill="#1f244f"/>
+          <circle cx="253" cy="412" r="6" fill="#1f244f"/>
+          <path d="M224 438c12-8 24-8 36 0" class="s"/>
+          <path d="M90 160l20 20m0-20-20 20" class="s"/>
+          <path d="M394 199h45" class="s"/>
+          <path d="M418 178c10 0 18 7 19 18" class="s"/>
+          <path d="M392 178c-10 0-18 7-19 18" class="s"/>
+          <path d="M105 340h74" class="s"/>
+          <path d="M96 340c0-13 10-23 23-23" class="s"/>
+          <path d="M180 340c0-13-10-23-23-23" class="s"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="form-pane">
+      <header>
+        <h1>Welcome Back!</h1>
+        <p class="subtitle">Log in to continue your compliance journey across safety, quality, and production operations.</p>
+      </header>
+
+      <form>
+        <input class="field" type="text" placeholder="Username" autocomplete="username" />
+        <div style="height: 10px"></div>
+        <input class="field" type="password" placeholder="Password" autocomplete="current-password" />
+
+        <div class="inline-row">
+          <label class="check"><input type="checkbox" /> Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <button class="btn" type="submit">Log in</button>
+
+        <div class="divider">or continue with</div>
+
+        <div class="socials" aria-label="social login">
+          <button class="social" type="button" aria-label="Google">G</button>
+          <button class="social" type="button" aria-label="Apple"></button>
+          <button class="social" type="button" aria-label="Facebook">f</button>
+        </div>
+
+        <p class="signup">Not a member? <a href="#">Join now</a></p>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
