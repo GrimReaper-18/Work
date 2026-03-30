@@ -63,17 +63,6 @@
       z-index: 1;
     }
 
-    .brand-mark {
-      position: absolute;
-      top: 28px;
-      left: 34px;
-      font-family: 'Syne', sans-serif;
-      font-size: 29px;
-      font-weight: 800;
-      color: #0e544f;
-      letter-spacing: -0.05em;
-    }
-
     .illustration-pane {
       padding: 84px 52px 42px;
       display: grid;
@@ -254,6 +243,16 @@
       text-decoration: none;
     }
 
+    .message {
+      min-height: 22px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .message.error { color: #a13333; }
+    .message.success { color: #1d6a4f; }
+
     @media (max-width: 1060px) {
       .login-shell { grid-template-columns: 1fr; }
       .illustration-pane { display: none; }
@@ -265,8 +264,6 @@
   <div class="leaf-pattern"></div>
 
   <main class="login-shell" role="main">
-    <div class="brand-mark">m</div>
-
     <section class="illustration-pane" aria-hidden="true">
       <div class="art">
         <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
@@ -312,9 +309,9 @@
         <p class="subtitle">Log in to continue your compliance journey across safety, quality, and production operations.</p>
       </header>
 
-      <form>
-        <input class="field" type="text" placeholder="Username" autocomplete="username" />
-        <input class="field" type="password" placeholder="Password" autocomplete="current-password" />
+      <form id="login-form">
+        <input id="username" class="field" type="text" placeholder="Username" autocomplete="username" />
+        <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
 
         <div class="inline-row">
           <label class="check"><input type="checkbox" /> Remember me</label>
@@ -322,6 +319,7 @@
         </div>
 
         <button class="btn" type="submit">Log in</button>
+        <p id="login-message" class="message" aria-live="polite"></p>
 
         <div class="divider">or continue with</div>
 
@@ -335,5 +333,30 @@
       </form>
     </section>
   </main>
+  <script>
+    const loginForm = document.getElementById('login-form');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const messageEl = document.getElementById('login-message');
+
+    loginForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (username === 'aman' && password === 'aman1234') {
+        messageEl.textContent = 'Login successful. Redirecting to dashboard...';
+        messageEl.className = 'message success';
+        setTimeout(() => {
+          window.location.href = 'main.html';
+        }, 500);
+        return;
+      }
+
+      messageEl.textContent = 'Invalid username or password. Please try again.';
+      messageEl.className = 'message error';
+    });
+  </script>
 </body>
 </html>
