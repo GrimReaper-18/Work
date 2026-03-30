@@ -209,8 +209,15 @@ body {
   border-top: 1px solid rgba(255,255,255,0.06);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   flex-shrink: 0;
+}
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 .user-avatar {
   width: 32px; height: 32px;
@@ -226,6 +233,27 @@ body {
 }
 .user-name  { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); }
 .user-role  { font-size: 10px; color: rgba(255,255,255,0.35); font-family: var(--font-m); }
+.signout-btn {
+  border: 1px solid rgba(198,172,143,0.55);
+  background: rgba(198,172,143,0.2);
+  color: var(--orange-l);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-m);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.signout-btn:hover {
+  background: rgba(198,172,143,0.3);
+  transform: translateY(-1px);
+}
+.signout-btn:active {
+  transform: translateY(0);
+}
 
 /* ─────────────────────────────────────────────────────────────────────
    MAIN AREA
@@ -1413,11 +1441,14 @@ body {
   </nav>
 
   <div class="sidebar-user">
-    <div class="user-avatar">AR</div>
-    <div>
-      <div class="user-name">Aman Rajak</div>
-      <div class="user-role">Admin · EHS Head</div>
+    <div class="user-meta">
+      <div class="user-avatar">AR</div>
+      <div>
+        <div class="user-name">Aman Rajak</div>
+        <div class="user-role">Admin · EHS Head</div>
+      </div>
     </div>
+    <button class="signout-btn" onclick="window.location.href='index.html'">Sign out</button>
   </div>
 </aside>
 
