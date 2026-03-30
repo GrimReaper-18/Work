@@ -205,12 +205,12 @@ body {
 .badge-green { background: rgba(94,80,63,0.20);  color: #EAE0D5; }
 
 .sidebar-user {
-  padding: 14px;
+  padding: 12px 14px;
   border-top: 1px solid rgba(255,255,255,0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 .user-meta {
@@ -218,9 +218,10 @@ body {
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 .user-avatar {
-  width: 32px; height: 32px;
+  width: 34px; height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--orange), var(--orange-d));
   display: flex;
@@ -231,24 +232,47 @@ body {
   color: var(--white);
   flex-shrink: 0;
 }
-.user-name  { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); }
-.user-role  { font-size: 10px; color: rgba(255,255,255,0.35); font-family: var(--font-m); }
+.user-details {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.user-name  {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-role  {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  font-family: var(--font-m);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .signout-btn {
   border: 1px solid rgba(198,172,143,0.55);
-  background: rgba(198,172,143,0.2);
-  color: var(--orange-l);
-  font-size: 10px;
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.84);
+  font-size: 9px;
   font-weight: 600;
   font-family: var(--font-m);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 6px 12px;
+  min-width: 72px;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .signout-btn:hover {
-  background: rgba(198,172,143,0.3);
+  background: rgba(198,172,143,0.22);
   transform: translateY(-1px);
 }
 .signout-btn:active {
@@ -1443,7 +1467,7 @@ body {
   <div class="sidebar-user">
     <div class="user-meta">
       <div class="user-avatar">AR</div>
-      <div>
+      <div class="user-details">
         <div class="user-name">Aman Rajak</div>
         <div class="user-role">Admin · EHS Head</div>
       </div>
