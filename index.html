@@ -194,53 +194,6 @@
       box-shadow: 0 6px 14px rgba(36, 86, 80, 0.2);
     }
 
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: #826f57;
-      font-size: 0.92rem;
-      margin-top: 8px;
-    }
-
-    .divider::before,
-    .divider::after {
-      content: "";
-      height: 1px;
-      flex: 1;
-      background: #ccbba2;
-    }
-
-    .socials {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 6px;
-    }
-
-    .social {
-      width: 42px;
-      height: 42px;
-      border-radius: 11px;
-      border: 0;
-      background: #245650;
-      color: var(--white);
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 1.1rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-    }
-
-    .social svg {
-      width: 17px;
-      height: 17px;
-      fill: currentColor;
-      display: block;
-    }
-
     .signup {
       text-align: center;
       color: #7e6d57;
@@ -332,12 +285,6 @@
         <button class="btn" type="submit">Log in</button>
         <p id="login-message" class="message" aria-live="polite"></p>
 
-        <div class="divider">or continue with</div>
-
-        <div class="socials" aria-label="social login">
-          <button class="social" type="button" aria-label="Google">G</button>
-          <button class="social" type="button" aria-label="Facebook">f</button>
-        </div>
 
         <p class="signup">Don't have an account? <a href="#">Register</a></p>
       </form>
