@@ -137,21 +137,47 @@
       padding-right: 52px;
     }
 
-    .password-visibility-icon {
+    .password-visibility-toggle {
       position: absolute;
-      right: 14px;
+      right: 10px;
       top: 50%;
       transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .password-visibility-toggle:focus-visible {
+      outline: 2px solid var(--navy);
+      outline-offset: 2px;
+    }
+
+    .password-visibility-icon {
+      position: absolute;
       width: 24px;
       height: 24px;
       color: var(--ink);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.16s ease;
+      transition: opacity 0.16s ease, visibility 0.16s ease;
     }
 
-    .password-wrap.show-visibility-icon .password-visibility-icon {
+    .password-visibility-icon.icon-hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .password-wrap.show-password .password-visibility-icon.icon-show {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .password-wrap.show-password .password-visibility-icon.icon-hide {
       opacity: 1;
       visibility: visible;
     }
@@ -304,10 +330,18 @@
         <input id="username" class="field" type="text" placeholder="Username" autocomplete="username" />
         <div id="password-wrap" class="password-wrap">
           <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
-          <svg class="password-visibility-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M2 12C4.9 7.7 8.1 5.5 12 5.5C15.9 5.5 19.1 7.7 22 12C19.1 16.3 15.9 18.5 12 18.5C8.1 18.5 4.9 16.3 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
-          </svg>
+          <button id="toggle-password-visibility" class="password-visibility-toggle" type="button" aria-label="Show password" aria-pressed="false">
+            <svg class="password-visibility-icon icon-show" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M2 12C4.9 7.7 8.1 5.5 12 5.5C15.9 5.5 19.1 7.7 22 12C19.1 16.3 15.9 18.5 12 18.5C8.1 18.5 4.9 16.3 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            <svg class="password-visibility-icon icon-hide" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M3 3L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10.6 5.7C11.1 5.57 11.56 5.5 12 5.5C15.9 5.5 19.1 7.7 22 12C21.2 13.2 20.35 14.2 19.46 15.05" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6.3 6.3C4.79 7.45 3.4 9.02 2 12C4.9 16.3 8.1 18.5 12 18.5C13.26 18.5 14.44 18.27 15.53 17.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9.88 9.88C9.4 10.36 9.1 11.03 9.1 11.77C9.1 13.22 10.28 14.4 11.73 14.4C12.47 14.4 13.14 14.1 13.62 13.62" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
 
         <div class="inline-row">
@@ -327,18 +361,23 @@
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
-    const rememberMeInput = document.getElementById('remember-me');
     const passwordWrap = document.getElementById('password-wrap');
+    const togglePasswordButton = document.getElementById('toggle-password-visibility');
     const messageEl = document.getElementById('login-message');
 
-    const syncPasswordVisibility = () => {
-      const shouldShowPassword = rememberMeInput.checked;
+    const syncPasswordVisibility = (shouldShowPassword) => {
       passwordInput.type = shouldShowPassword ? 'text' : 'password';
-      passwordWrap.classList.toggle('show-visibility-icon', shouldShowPassword);
+      passwordWrap.classList.toggle('show-password', shouldShowPassword);
+      togglePasswordButton.setAttribute('aria-pressed', String(shouldShowPassword));
+      togglePasswordButton.setAttribute('aria-label', shouldShowPassword ? 'Hide password' : 'Show password');
     };
 
-    syncPasswordVisibility();
-    rememberMeInput.addEventListener('change', syncPasswordVisibility);
+    togglePasswordButton.addEventListener('click', () => {
+      const shouldShowPassword = passwordInput.type === 'password';
+      syncPasswordVisibility(shouldShowPassword);
+    });
+
+    syncPasswordVisibility(false);
 
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
