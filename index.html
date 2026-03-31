@@ -129,6 +129,33 @@
       box-shadow: 0 0 0 3px rgba(34, 51, 59, 0.12);
     }
 
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap .field {
+      padding-right: 52px;
+    }
+
+    .password-visibility-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      color: var(--ink);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.16s ease;
+    }
+
+    .password-wrap.show-visibility-icon .password-visibility-icon {
+      opacity: 1;
+      visibility: visible;
+    }
+
     .inline-row {
       display: flex;
       justify-content: space-between;
@@ -275,15 +302,17 @@
 
       <form id="login-form">
         <input id="username" class="field" type="text" placeholder="Username" autocomplete="username" />
-        <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
+        <div id="password-wrap" class="password-wrap">
+          <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
+          <svg class="password-visibility-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M2 12C4.9 7.7 8.1 5.5 12 5.5C15.9 5.5 19.1 7.7 22 12C19.1 16.3 15.9 18.5 12 18.5C8.1 18.5 4.9 16.3 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
 
         <div class="inline-row">
           <label class="check"><input id="remember-me" type="checkbox" /> Remember me</label>
-          <div>
-            <a id="toggle-password" class="password-toggle" href="#" aria-controls="password" aria-label="Show password">View password</a>
-            &nbsp;|&nbsp;
-            <a href="#">Forgot password?</a>
-          </div>
+          <a href="#">Forgot password?</a>
         </div>
 
         <button class="btn" type="submit">Log in</button>
@@ -299,28 +328,17 @@
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const rememberMeInput = document.getElementById('remember-me');
-    const togglePasswordLink = document.getElementById('toggle-password');
+    const passwordWrap = document.getElementById('password-wrap');
     const messageEl = document.getElementById('login-message');
 
-    const ensurePasswordToggleVisible = () => {
-      togglePasswordLink.style.display = 'inline-flex';
-      togglePasswordLink.style.visibility = 'visible';
-      togglePasswordLink.style.opacity = '1';
+    const syncPasswordVisibility = () => {
+      const shouldShowPassword = rememberMeInput.checked;
+      passwordInput.type = shouldShowPassword ? 'text' : 'password';
+      passwordWrap.classList.toggle('show-visibility-icon', shouldShowPassword);
     };
 
-    ensurePasswordToggleVisible();
-
-    rememberMeInput.addEventListener('change', () => {
-      ensurePasswordToggleVisible();
-    });
-
-    togglePasswordLink.addEventListener('click', (event) => {
-      event.preventDefault();
-      const isHidden = passwordInput.type === 'password';
-      passwordInput.type = isHidden ? 'text' : 'password';
-      togglePasswordLink.textContent = isHidden ? 'Hide password' : 'View password';
-      togglePasswordLink.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
-    });
+    syncPasswordVisibility();
+    rememberMeInput.addEventListener('change', syncPasswordVisibility);
 
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
