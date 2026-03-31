@@ -278,9 +278,9 @@
         <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
 
         <div class="inline-row">
-          <label class="check"><input type="checkbox" /> Remember me</label>
+          <label class="check"><input id="remember-me" type="checkbox" /> Remember me</label>
           <div>
-            <a id="toggle-password" href="#" aria-controls="password" aria-label="Show password">View password</a>
+            <a id="toggle-password" class="password-toggle" href="#" aria-controls="password" aria-label="Show password">View password</a>
             &nbsp;|&nbsp;
             <a href="#">Forgot password?</a>
           </div>
@@ -298,8 +298,21 @@
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const rememberMeInput = document.getElementById('remember-me');
     const togglePasswordLink = document.getElementById('toggle-password');
     const messageEl = document.getElementById('login-message');
+
+    const ensurePasswordToggleVisible = () => {
+      togglePasswordLink.style.display = 'inline-flex';
+      togglePasswordLink.style.visibility = 'visible';
+      togglePasswordLink.style.opacity = '1';
+    };
+
+    ensurePasswordToggleVisible();
+
+    rememberMeInput.addEventListener('change', () => {
+      ensurePasswordToggleVisible();
+    });
 
     togglePasswordLink.addEventListener('click', (event) => {
       event.preventDefault();
