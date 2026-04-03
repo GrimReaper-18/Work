@@ -161,6 +161,28 @@
       color: var(--navy);
     }
 
+    .password-toggle svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .password-toggle .icon-eye-off {
+      display: none;
+    }
+
+    .password-toggle.is-visible .icon-eye {
+      display: none;
+    }
+
+    .password-toggle.is-visible .icon-eye-off {
+      display: block;
+    }
+
     .inline-row {
       display: flex;
       justify-content: space-between;
@@ -309,7 +331,18 @@
         <input id="username" class="field" type="text" placeholder="Username" autocomplete="username" />
         <div class="password-wrap">
           <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
-          <button id="password-toggle" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password">👁️</button>
+          <button id="password-toggle" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password">
+            <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg class="icon-eye-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M17.94 17.94C16.23 19.23 14.2 20 12 20 5 20 1 12 1 12c1.24-2.12 2.88-3.9 4.82-5.2"></path>
+              <path d="M9.9 4.24C10.58 4.08 11.28 4 12 4c7 0 11 8 11 8-.62 1.06-1.33 2.01-2.12 2.84"></path>
+              <path d="M14.12 14.12a3 3 0 0 1-4.24-4.24"></path>
+              <path d="M1 1l22 22"></path>
+            </svg>
+          </button>
         </div>
 
         <div class="inline-row">
@@ -336,7 +369,7 @@
     passwordToggleButton.addEventListener('click', () => {
       isPasswordVisible = !isPasswordVisible;
       passwordInput.type = isPasswordVisible ? 'text' : 'password';
-      passwordToggleButton.textContent = isPasswordVisible ? '🙈' : '👁️';
+      passwordToggleButton.classList.toggle('is-visible', isPasswordVisible);
       passwordToggleButton.setAttribute('aria-label', isPasswordVisible ? 'Hide password' : 'Show password');
       passwordToggleButton.setAttribute('title', isPasswordVisible ? 'Hide password' : 'Show password');
       passwordToggleButton.setAttribute('aria-pressed', String(isPasswordVisible));
