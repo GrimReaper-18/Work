@@ -1119,21 +1119,6 @@ body.page-exit {
 .onboard-step.active { display: block; }
 .onboard-h { font-family: var(--font-d); font-size: 20px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
 .onboard-p { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
-.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
-.option-btn {
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all 0.15s;
-  background: var(--white);
-  text-align: left;
-}
-.option-btn:hover   { border-color: var(--orange); }
-.option-btn.sel     { border-color: var(--orange); background: rgba(198,172,143,0.12); }
-.option-icon  { font-size: 22px; margin-bottom: 6px; }
-.option-label { font-size: 13px; font-weight: 600; color: var(--charcoal); }
-.option-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .onboard-input {
   width: 100%;
   padding: 11px 14px;
@@ -1279,32 +1264,8 @@ body.page-exit {
       <div class="prog-step" id="ps4"></div>
     </div>
 
-    <!-- Step 1: Sector -->
+    <!-- Step 1 -->
     <div class="onboard-step active" id="os1">
-      <div class="onboard-h">What sector are you in?</div>
-      <div class="onboard-p">We'll pre-load the right compliance templates for your plant type.</div>
-      <div class="option-grid">
-        <div class="option-btn sel" onclick="selectOption(this,'sector','Forging & Casting')">
-          <div class="option-icon">🔩</div>
-          <div class="option-label">Forging & Casting</div>
-          <div class="option-sub">Hot metal, furnaces, cranes</div>
-        </div>
-        <div class="option-btn" onclick="selectOption(this,'sector','Stamping & Sheet Metal')">
-          <div class="option-icon">⚙️</div>
-          <div class="option-label">Stamping & Sheet Metal</div>
-          <div class="option-sub">Press shop, tools & dies</div>
-        </div>
-        <div class="option-btn" onclick="selectOption(this,'sector','Specialised Components')">
-          <div class="option-icon">🔧</div>
-          <div class="option-label">Specialised Components</div>
-          <div class="option-sub">Machining, precision parts</div>
-        </div>
-        <div class="option-btn" onclick="selectOption(this,'sector','Safety Shoes')">
-          <div class="option-icon">👟</div>
-          <div class="option-label">Safety Shoes</div>
-          <div class="option-sub">IS 15298, CE, PPE compliance</div>
-        </div>
-      </div>
       <button class="btn btn-primary" style="width:100%" onclick="nextOnboard(2)">Continue →</button>
     </div>
 
@@ -1341,7 +1302,7 @@ body.page-exit {
       <div style="text-align:center;padding:20px 0">
         <div id="ob-icon" aria-hidden="true"></div>
         <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
-        <div class="onboard-p" id="ob-sub">Configuring 33 obligations for Forging & Casting · Maharashtra</div>
+        <div class="onboard-p" id="ob-sub">Configuring 33 obligations · Maharashtra</div>
         <div class="prog-bar" style="margin:24px 0">
           <div class="prog-fill orange" id="ob-progress" style="width:0;transition:width 0.4s ease"></div>
         </div>
@@ -1642,7 +1603,6 @@ const DATA = {
    ONBOARDING
 ───────────────────────────────────────────────────────── */
 let obStep = 1;
-let obSelections = { sector: 'Forging & Casting' };
 
 function setOnboardingIcon(type = 'loading') {
   const icon = document.getElementById('ob-icon');
@@ -1679,12 +1639,6 @@ function setOnboardingIcon(type = 'loading') {
   `;
 }
 
-function selectOption(el, key, val) {
-  el.closest('.option-grid').querySelectorAll('.option-btn').forEach(b => b.classList.remove('sel'));
-  el.classList.add('sel');
-  obSelections[key] = val;
-}
-
 function nextOnboard(step) {
   document.getElementById('os' + obStep).classList.remove('active');
   obStep = step;
@@ -1715,7 +1669,7 @@ function runOnboardingLoad() {
   const list = document.getElementById('ob-items');
   setOnboardingIcon('loading');
   msg.textContent = 'Loading compliance pack…';
-  sub.textContent = `Configuring 33 obligations · ${obSelections.sector} · Maharashtra`;
+  sub.textContent = 'Configuring 33 obligations · Maharashtra';
 
   const iv = setInterval(() => {
     if (i >= items.length) {
@@ -1727,7 +1681,7 @@ function runOnboardingLoad() {
       setTimeout(() => {
         document.getElementById('onboard-modal').style.display = 'none';
         showPage('dashboard');
-        showToast('✅ CompliOS configured for ' + obSelections.sector + ' · 33 obligations loaded', 'success');
+        showToast('✅ CompliOS configured · 33 obligations loaded', 'success');
       }, 1400);
       return;
     }
