@@ -129,6 +129,38 @@
       box-shadow: 0 0 0 3px rgba(34, 51, 59, 0.12);
     }
 
+    .password-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-wrap .field {
+      padding-right: 52px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: var(--brown);
+      font-size: 1.1rem;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    .password-toggle:hover {
+      background: rgba(34, 51, 59, 0.08);
+      color: var(--navy);
+    }
+
     .inline-row {
       display: flex;
       justify-content: space-between;
@@ -275,10 +307,13 @@
 
       <form id="login-form">
         <input id="username" class="field" type="text" placeholder="Username" autocomplete="username" />
-        <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
+        <div class="password-wrap">
+          <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" />
+          <button id="password-toggle" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password">👁️</button>
+        </div>
 
         <div class="inline-row">
-          <label class="check"><input type="checkbox" /> Remember me</label>
+          <label class="check"><input id="remember-me" type="checkbox" /> Remember me</label>
           <a href="#">Forgot password?</a>
         </div>
 
@@ -293,7 +328,24 @@
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const passwordToggleButton = document.getElementById('password-toggle');
+    const rememberMeCheckbox = document.getElementById('remember-me');
     const messageEl = document.getElementById('login-message');
+    let isPasswordVisible = false;
+
+    passwordToggleButton.addEventListener('click', () => {
+      isPasswordVisible = !isPasswordVisible;
+      passwordInput.type = isPasswordVisible ? 'text' : 'password';
+      passwordToggleButton.textContent = isPasswordVisible ? '🙈' : '👁️';
+      passwordToggleButton.setAttribute('aria-label', isPasswordVisible ? 'Hide password' : 'Show password');
+      passwordToggleButton.setAttribute('title', isPasswordVisible ? 'Hide password' : 'Show password');
+      passwordToggleButton.setAttribute('aria-pressed', String(isPasswordVisible));
+    });
+
+    rememberMeCheckbox.addEventListener('change', (event) => {
+      event.stopPropagation();
+      localStorage.setItem('rememberMe', String(rememberMeCheckbox.checked));
+    });
 
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
