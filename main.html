@@ -1276,50 +1276,20 @@ body.page-exit {
       <div class="prog-step done" id="ps1"></div>
       <div class="prog-step" id="ps2"></div>
       <div class="prog-step" id="ps3"></div>
-      <div class="prog-step" id="ps4"></div>
     </div>
 
-    <!-- Step 1: Sector -->
+    <!-- Step 1: Location -->
     <div class="onboard-step active" id="os1">
-      <div class="onboard-h">What sector are you in?</div>
-      <div class="onboard-p">We'll pre-load the right compliance templates for your plant type.</div>
-      <div class="option-grid">
-        <div class="option-btn sel" onclick="selectOption(this,'sector','Forging & Casting')">
-          <div class="option-icon">🔩</div>
-          <div class="option-label">Forging & Casting</div>
-          <div class="option-sub">Hot metal, furnaces, cranes</div>
-        </div>
-        <div class="option-btn" onclick="selectOption(this,'sector','Stamping & Sheet Metal')">
-          <div class="option-icon">⚙️</div>
-          <div class="option-label">Stamping & Sheet Metal</div>
-          <div class="option-sub">Press shop, tools & dies</div>
-        </div>
-        <div class="option-btn" onclick="selectOption(this,'sector','Specialised Components')">
-          <div class="option-icon">🔧</div>
-          <div class="option-label">Specialised Components</div>
-          <div class="option-sub">Machining, precision parts</div>
-        </div>
-        <div class="option-btn" onclick="selectOption(this,'sector','Safety Shoes')">
-          <div class="option-icon">👟</div>
-          <div class="option-label">Safety Shoes</div>
-          <div class="option-sub">IS 15298, CE, PPE compliance</div>
-        </div>
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="nextOnboard(2)">Continue →</button>
-    </div>
-
-    <!-- Step 2: Location -->
-    <div class="onboard-step" id="os2">
       <div class="onboard-h">Where is your plant?</div>
       <div class="onboard-p">Location determines which state-specific rules apply — MPCB, Maharashtra Factories Rules, DISH, etc.</div>
       <input class="onboard-input" type="text" placeholder="Plant name (e.g. Ranjan Engineering Pvt Ltd)" id="inp-plant"/>
       <input class="onboard-input" type="text" placeholder="Location (e.g. Chakan MIDC, Pune)" id="inp-location" value="Chakan MIDC, Pune"/>
       <input class="onboard-input" type="text" placeholder="State (e.g. Maharashtra)" id="inp-state" value="Maharashtra"/>
-      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(3)">Continue →</button>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(2)">Continue →</button>
     </div>
 
-    <!-- Step 3: Workers -->
-    <div class="onboard-step" id="os3">
+    <!-- Step 2: Workers -->
+    <div class="onboard-step" id="os2">
       <div class="onboard-h">Tell us about your workforce</div>
       <div class="onboard-p">This helps us set up PF/ESI tracking, shift registers and labour compliance correctly.</div>
       <input class="onboard-input" type="number" placeholder="Number of workers (e.g. 150)" id="inp-workers" value="150"/>
@@ -1328,20 +1298,20 @@ body.page-exit {
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
           <input type="checkbox" checked id="cb-pf" style="width:14px;height:14px;accent-color:var(--orange)"/> PF applicable
         </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
           <input type="checkbox" checked id="cb-esi" style="width:14px;height:14px;accent-color:var(--orange)"/> ESI applicable
         </label>
       </div>
       <input class="onboard-input" type="text" placeholder="Main OEM customers (e.g. Bajaj, VW, Tata)" id="inp-oem" value="Bajaj Auto, VW Group"/>
-      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(4)">Continue →</button>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(3)">Continue →</button>
     </div>
 
-    <!-- Step 4: Loading -->
-    <div class="onboard-step" id="os4">
+    <!-- Step 3: Loading -->
+    <div class="onboard-step" id="os3">
       <div style="text-align:center;padding:20px 0">
         <div id="ob-icon" aria-hidden="true"></div>
         <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
-        <div class="onboard-p" id="ob-sub">Configuring 33 obligations for Forging & Casting · Maharashtra</div>
+        <div class="onboard-p" id="ob-sub">Configuring 33 obligations · Maharashtra</div>
         <div class="prog-bar" style="margin:24px 0">
           <div class="prog-fill orange" id="ob-progress" style="width:0;transition:width 0.4s ease"></div>
         </div>
@@ -1642,7 +1612,6 @@ const DATA = {
    ONBOARDING
 ───────────────────────────────────────────────────────── */
 let obStep = 1;
-let obSelections = { sector: 'Forging & Casting' };
 
 function setOnboardingIcon(type = 'loading') {
   const icon = document.getElementById('ob-icon');
@@ -1679,20 +1648,14 @@ function setOnboardingIcon(type = 'loading') {
   `;
 }
 
-function selectOption(el, key, val) {
-  el.closest('.option-grid').querySelectorAll('.option-btn').forEach(b => b.classList.remove('sel'));
-  el.classList.add('sel');
-  obSelections[key] = val;
-}
-
 function nextOnboard(step) {
   document.getElementById('os' + obStep).classList.remove('active');
   obStep = step;
   document.getElementById('os' + obStep).classList.add('active');
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 3; i++) {
     document.getElementById('ps' + i).classList.toggle('done', i <= step);
   }
-  if (step === 4) runOnboardingLoad();
+  if (step === 3) runOnboardingLoad();
 }
 
 function runOnboardingLoad() {
@@ -1715,7 +1678,7 @@ function runOnboardingLoad() {
   const list = document.getElementById('ob-items');
   setOnboardingIcon('loading');
   msg.textContent = 'Loading compliance pack…';
-  sub.textContent = `Configuring 33 obligations · ${obSelections.sector} · Maharashtra`;
+  sub.textContent = 'Configuring 33 obligations · Maharashtra';
 
   const iv = setInterval(() => {
     if (i >= items.length) {
@@ -1727,7 +1690,7 @@ function runOnboardingLoad() {
       setTimeout(() => {
         document.getElementById('onboard-modal').style.display = 'none';
         showPage('dashboard');
-        showToast('✅ CompliOS configured for ' + obSelections.sector + ' · 33 obligations loaded', 'success');
+        showToast('✅ CompliOS configured · 33 obligations loaded', 'success');
       }, 1400);
       return;
     }
