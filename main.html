@@ -1651,10 +1651,7 @@ body.page-exit {
               <div class="form-field">
                 <label for="new-assigned-to">Assigned To</label>
                 <select id="new-assigned-to">
-                  <option value="">Select person / role</option>
-                  <option>Production Supervisor</option>
-                  <option>Safety Officer</option>
-                  <option>Maintenance Lead</option>
+                  <option value="">Select employee</option>
                 </select>
               </div>
               <div class="form-field">
@@ -2383,6 +2380,25 @@ function getCreateChecklistDateValidationMessage() {
     : '';
 }
 
+function populateAssignedToOptions() {
+  const select = document.getElementById('new-assigned-to');
+  if (!select) return;
+
+  const employees = Array.isArray(DATA?.people) ? DATA.people : [];
+  if (!employees.length) {
+    select.innerHTML = '<option value="">No employees available</option>';
+    select.value = '';
+    select.disabled = true;
+    return;
+  }
+
+  select.disabled = false;
+  const employeeOptions = employees
+    .map(p => `<option value="${p.id}">${p.name}</option>`)
+    .join('');
+  select.innerHTML = `<option value="">Select employee</option>${employeeOptions}`;
+}
+
 function isCreateStepValid(step) {
   if (step === 1) {
     return Boolean(
@@ -2428,6 +2444,10 @@ function updateCreateChecklistStepUI() {
 
 function createChecklistNextStep() {
   if (!isCreateStepValid(createChecklistStep)) {
+    if (createChecklistStep === 3 && !document.getElementById('new-assigned-to').value) {
+      showToast('Please select an employee before creating checklist', 'warning');
+      return;
+    }
     const dateValidationMessage = getCreateChecklistDateValidationMessage();
     showToast(dateValidationMessage || 'Please complete required fields before continuing', 'warning');
     return;
@@ -2444,6 +2464,7 @@ function createChecklistPrevStep() {
 function resetCreateChecklistForm() {
   const form = document.querySelector('#create-checklist-modal form');
   if (form) form.reset();
+  populateAssignedToOptions();
   createChecklistStep = 1;
   updateCustomFrequencyFields();
   updateCreateChecklistStepUI();
@@ -2452,6 +2473,10 @@ function resetCreateChecklistForm() {
 function submitCreateChecklist(event) {
   event.preventDefault();
   if (!isCreateStepValid(1) || !isCreateStepValid(2) || !isCreateStepValid(3)) {
+    if (!document.getElementById('new-assigned-to').value) {
+      showToast('Please select an employee before creating checklist', 'warning');
+      return;
+    }
     const dateValidationMessage = getCreateChecklistDateValidationMessage();
     showToast(dateValidationMessage || 'Please fill all required fields', 'warning');
     return;
