@@ -2325,6 +2325,19 @@ function updateCustomFrequencyFields() {
   }
 }
 
+function getCreateChecklistDateValidationMessage() {
+  const freq = document.getElementById('new-freq').value;
+  if (freq !== 'Custom') return '';
+
+  const customStartDate = document.getElementById('new-custom-start').value;
+  const customDueDate = document.getElementById('new-custom-due-date').value;
+  if (!customStartDate || !customDueDate) return '';
+
+  return customStartDate > customDueDate
+    ? 'Start date cannot be after due date. Please choose valid dates.'
+    : '';
+}
+
 function isCreateStepValid(step) {
   if (step === 1) {
     return Boolean(
@@ -2341,7 +2354,8 @@ function isCreateStepValid(step) {
     if (freq === 'Custom') {
       const customStartDate = document.getElementById('new-custom-start').value;
       const customDueDate = document.getElementById('new-custom-due-date').value;
-      return Boolean(customStartDate && customDueDate && customDueDate >= customStartDate);
+      if (!customStartDate || !customDueDate) return false;
+      return !getCreateChecklistDateValidationMessage();
     }
     return true;
   }
@@ -2370,7 +2384,8 @@ function updateCreateChecklistStepUI() {
 
 function createChecklistNextStep() {
   if (!isCreateStepValid(createChecklistStep)) {
-    showToast('Please complete required fields before continuing', 'warning');
+    const dateValidationMessage = getCreateChecklistDateValidationMessage();
+    showToast(dateValidationMessage || 'Please complete required fields before continuing', 'warning');
     return;
   }
   createChecklistStep = Math.min(CREATE_STEP_COUNT, createChecklistStep + 1);
@@ -2393,7 +2408,8 @@ function resetCreateChecklistForm() {
 function submitCreateChecklist(event) {
   event.preventDefault();
   if (!isCreateStepValid(1) || !isCreateStepValid(2) || !isCreateStepValid(3)) {
-    showToast('Please fill all required fields', 'warning');
+    const dateValidationMessage = getCreateChecklistDateValidationMessage();
+    showToast(dateValidationMessage || 'Please fill all required fields', 'warning');
     return;
   }
 
