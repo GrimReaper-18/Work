@@ -840,7 +840,8 @@ body.page-exit {
 .audit-card-footer { display: flex; justify-content: space-between; align-items: center; }
 
 /* CHECKLIST MODAL */
-#checklist-modal {
+#checklist-modal,
+#create-checklist-modal {
   display: none;
   position: fixed;
   inset: 0;
@@ -850,7 +851,8 @@ body.page-exit {
   align-items: center;
   justify-content: center;
 }
-#checklist-modal.open { display: flex; }
+#checklist-modal.open,
+#create-checklist-modal.open { display: flex; }
 .modal-box {
   background: var(--white);
   border-radius: 20px;
@@ -915,6 +917,37 @@ body.page-exit {
 .check-btn.yes.sel  { background: var(--green); border-color: var(--green); color: var(--white); }
 .check-btn.no.sel   { background: var(--red);   border-color: var(--red);   color: var(--white); }
 .check-btn.na.sel   { background: var(--muted); border-color: var(--muted); color: var(--white); }
+
+/* CREATE CHECKLIST MODAL */
+.create-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.form-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.form-field input,
+.form-field select {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--charcoal);
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+}
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--navy-light);
+  box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
+}
+.form-field.full { grid-column: 1 / -1; }
 
 /* ─────────────────────────────────────────────────────────────────────
    ACTIONS PAGE
@@ -1402,6 +1435,73 @@ body.page-exit {
         <button class="btn btn-primary" onclick="submitChecklist()">Submit audit</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CREATE CHECKLIST MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="create-checklist-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Create Checklist</div>
+        <div class="modal-sub">Add a new checklist to Audits & Checklists</div>
+      </div>
+      <div class="drawer-close" onclick="closeCreateChecklist()">×</div>
+    </div>
+    <form onsubmit="submitCreateChecklist(event)">
+      <div class="modal-body">
+        <div class="create-form-grid">
+          <div class="form-field full">
+            <label for="new-title">Checklist title</label>
+            <input id="new-title" required placeholder="Example: Monthly Housekeeping Audit" />
+          </div>
+          <div class="form-field">
+            <label for="new-type">Category</label>
+            <select id="new-type" required>
+              <option value="">Select</option>
+              <option>Safety/EHS</option>
+              <option>Statutory</option>
+              <option>OEM</option>
+              <option>PPE</option>
+              <option>Internal</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="new-freq">Frequency</label>
+            <select id="new-freq" required>
+              <option value="">Select</option>
+              <option>Daily</option>
+              <option>Weekly</option>
+              <option>Monthly</option>
+              <option>Quarterly</option>
+              <option>As needed</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="new-due">Due date</label>
+            <input id="new-due" type="date" required />
+          </div>
+          <div class="form-field">
+            <label for="new-plant">Plant</label>
+            <select id="new-plant" required>
+              <option value="">Select</option>
+              <option>Chakan MIDC</option>
+              <option>Ranjan Engineering</option>
+              <option>Plant 2</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span style="font-size:12px;color:var(--muted)">Questions can be added from the checklist detail drawer.</span>
+        <div style="display:flex;gap:10px">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateChecklist()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create checklist</button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -2053,7 +2153,7 @@ function audits() {
         <div class="page-title">Audits & Checklists</div>
         <div class="page-sub">${DATA.audits.length} checklists · 2 due this month</div>
       </div>
-      <button class="btn btn-primary" onclick="showToast('Create custom checklist — coming soon','info')">+ Create checklist</button>
+      <button class="btn btn-primary" onclick="openCreateChecklist()">+ Create checklist</button>
     </div>
 
     <div class="audit-cards">
@@ -2069,6 +2169,50 @@ function audits() {
       </div>`).join('')}
     </div>
   </div>`;
+}
+
+function openCreateChecklist() {
+  document.getElementById('create-checklist-modal').classList.add('open');
+}
+
+function closeCreateChecklist() {
+  document.getElementById('create-checklist-modal').classList.remove('open');
+}
+
+function submitCreateChecklist(event) {
+  event.preventDefault();
+  const title = document.getElementById('new-title').value.trim();
+  const type = document.getElementById('new-type').value;
+  const freq = document.getElementById('new-freq').value;
+  const due = document.getElementById('new-due').value;
+  const plant = document.getElementById('new-plant').value;
+
+  if (!title || !type || !freq || !due || !plant) {
+    showToast('Please fill all required fields', 'warning');
+    return;
+  }
+
+  const today = new Date();
+  const dueDate = new Date(`${due}T00:00:00`);
+  let status = 'upcoming';
+  if (dueDate < today) status = 'overdue';
+  else if ((dueDate - today) / (1000 * 60 * 60 * 24) <= 7) status = 'due';
+
+  DATA.audits.unshift({
+    id: `A${String(Date.now()).slice(-6)}`,
+    type,
+    title,
+    freq,
+    due,
+    status,
+    plant,
+    questions: [],
+  });
+
+  event.target.reset();
+  closeCreateChecklist();
+  showPage('audits');
+  showToast('Checklist created successfully', 'success');
 }
 
 function openAudit(id) {
