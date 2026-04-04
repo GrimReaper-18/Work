@@ -1495,7 +1495,7 @@ body.page-exit {
         </div>
       </div>
       <div class="modal-footer">
-        <span style="font-size:12px;color:var(--muted)">Questions can be added from the checklist detail drawer.</span>
+        <span style="font-size:12px;color:var(--muted)">A template will be added automatically based on category.</span>
         <div style="display:flex;gap:10px">
           <button type="button" class="btn btn-secondary" onclick="closeCreateChecklist()">Cancel</button>
           <button type="submit" class="btn btn-primary">Create checklist</button>
@@ -1707,6 +1707,41 @@ const DATA = {
     { id:'D010', name:'Bajaj OEM Audit Pack 2025',       folder:'OEM',       type:'zip',   size:'18 MB',  date:'2025-11-20', expiry:'—',          tag:'ok' },
   ],
 };
+
+const CHECKLIST_TEMPLATES = {
+  'Safety/EHS': [
+    { section:'Area Safety', q:'Are walkways, exits and emergency routes clear?' },
+    { section:'PPE Compliance', q:'Are workers using mandatory PPE for the area?' },
+    { section:'Emergency Preparedness', q:'Are extinguishers and first-aid kits accessible and in-date?' },
+  ],
+  Statutory: [
+    { section:'Registers', q:'Are mandatory registers updated and signed?' },
+    { section:'Display & Notices', q:'Are statutory notices displayed in local language?' },
+    { section:'Evidence', q:'Are the latest compliance filings available for verification?' },
+  ],
+  OEM: [
+    { section:'Quality System', q:'Are control plans and FMEA revisions current?' },
+    { section:'Traceability', q:'Are RM/FG traceability records complete?' },
+    { section:'Calibration', q:'Are gauges and instruments within calibration validity?' },
+  ],
+  PPE: [
+    { section:'Issue & Stock', q:'Is PPE stock adequate for all active workers?' },
+    { section:'Condition', q:'Is damaged PPE replaced within policy timelines?' },
+    { section:'Compliance', q:'Are high-risk jobs using task-specific PPE?' },
+  ],
+  Internal: [
+    { section:'Process', q:'Are internal SOP checks completed as per plan?' },
+    { section:'Records', q:'Are audit findings from previous cycle closed?' },
+    { section:'Improvements', q:'Are preventive actions documented with owners and dates?' },
+  ],
+};
+
+function getChecklistTemplate(type) {
+  const matchingAudit = DATA.audits.find(a => a.type === type && a.questions.length);
+  if (matchingAudit) return matchingAudit.questions.map(q => ({ ...q }));
+  const template = CHECKLIST_TEMPLATES[type] || CHECKLIST_TEMPLATES.Internal;
+  return template.map(q => ({ ...q }));
+}
 
 /* ─────────────────────────────────────────────────────────
    ONBOARDING
@@ -2206,7 +2241,7 @@ function submitCreateChecklist(event) {
     due,
     status,
     plant,
-    questions: [],
+    questions: getChecklistTemplate(type),
   });
 
   event.target.reset();
