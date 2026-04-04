@@ -1644,7 +1644,7 @@ body.page-exit {
         </div>
 
         <div class="create-step" id="create-step-3">
-          <div class="step-section-title">Responsibility + Alerts</div>
+          <div class="step-section-title">Responsibility</div>
           <div class="sub-section">
             <div class="sub-heading">Responsibility</div>
             <div class="create-form-grid">
@@ -1667,20 +1667,6 @@ body.page-exit {
                 </select>
               </div>
             </div>
-          </div>
-          <div class="sub-section">
-            <div class="sub-heading">Alerts</div>
-            <div class="form-field">
-              <label for="new-reminder">Reminder</label>
-              <select id="new-reminder">
-                <option value="">Select reminder</option>
-                <option>1 day before</option>
-                <option>3 days before</option>
-              </select>
-            </div>
-          </div>
-          <div class="info-box">
-            If checklist is not completed, manager will be notified automatically.
           </div>
         </div>
       </div>
@@ -2422,8 +2408,7 @@ function isCreateStepValid(step) {
   if (step === 3) {
     return Boolean(
       document.getElementById('new-assigned-to').value &&
-      document.getElementById('new-reviewer').value &&
-      document.getElementById('new-reminder').value
+      document.getElementById('new-reviewer').value
     );
   }
 

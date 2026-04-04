@@ -13,7 +13,6 @@ const initialFormData = {
   customDueDate: '',
   assignedTo: '',
   reviewer: '',
-  reminder: '',
 };
 
 function Drawer({ isOpen, onClose, children }) {
@@ -149,45 +148,30 @@ function Step2({ data, onChange }) {
 function Step3({ data, onChange }) {
   return (
     <div style={styles.stepBody}>
-      <h3 style={styles.sectionHeading}>Responsibility + Alerts</h3>
+      <h3 style={styles.sectionHeading}>Responsibility</h3>
 
-      <div style={styles.subSection}>
-        <h4 style={styles.subHeading}>Responsibility</h4>
-        <label style={styles.label}>
-          Assigned To
-          <select style={styles.input} value={data.assignedTo} onChange={(e) => onChange('assignedTo', e.target.value)}>
-            <option value="">Select person / role</option>
-            <option>Production Supervisor</option>
-            <option>Safety Officer</option>
-            <option>Maintenance Lead</option>
-          </select>
-        </label>
+      <div style={styles.responsibilityCard}>
+        <div style={styles.responsibilityGrid}>
+          <label style={styles.label}>
+            Assigned To
+            <select style={styles.input} value={data.assignedTo} onChange={(e) => onChange('assignedTo', e.target.value)}>
+              <option value="">Select person / role</option>
+              <option>Production Supervisor</option>
+              <option>Safety Officer</option>
+              <option>Maintenance Lead</option>
+            </select>
+          </label>
 
-        <label style={styles.label}>
-          Reviewer
-          <select style={styles.input} value={data.reviewer} onChange={(e) => onChange('reviewer', e.target.value)}>
-            <option value="">Select reviewer</option>
-            <option>Supervisor</option>
-            <option>CA</option>
-            <option>Auditor</option>
-          </select>
-        </label>
-      </div>
-
-      <div style={styles.subSection}>
-        <h4 style={styles.subHeading}>Alerts</h4>
-        <label style={styles.label}>
-          Reminder
-          <select style={styles.input} value={data.reminder} onChange={(e) => onChange('reminder', e.target.value)}>
-            <option value="">Select reminder</option>
-            <option>1 day before</option>
-            <option>3 days before</option>
-          </select>
-        </label>
-      </div>
-
-      <div style={styles.infoBox}>
-        If checklist is not completed, manager will be notified automatically.
+          <label style={styles.label}>
+            Reviewer
+            <select style={styles.input} value={data.reviewer} onChange={(e) => onChange('reviewer', e.target.value)}>
+              <option value="">Select reviewer</option>
+              <option>Supervisor</option>
+              <option>CA</option>
+              <option>Auditor</option>
+            </select>
+          </label>
+        </div>
       </div>
     </div>
   );
@@ -223,7 +207,7 @@ export default function CreateChecklistDrawer() {
       return true;
     }
 
-    return Boolean(formData.assignedTo && formData.reviewer && formData.reminder);
+    return Boolean(formData.assignedTo && formData.reviewer);
   }, [formData, step]);
 
   const openDrawer = () => {
@@ -417,6 +401,19 @@ const styles = {
     fontWeight: 700,
     color: '#374151',
   },
+  responsibilityCard: {
+    display: 'grid',
+    gap: 14,
+    padding: 14,
+    borderRadius: 12,
+    border: '1px solid #e5e7eb',
+    background: '#f8fafc',
+  },
+  responsibilityGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 14,
+  },
   label: {
     display: 'grid',
     gap: 6,
@@ -433,15 +430,6 @@ const styles = {
     outline: 'none',
     color: '#111827',
     background: '#fff',
-  },
-  infoBox: {
-    marginTop: 8,
-    padding: '10px 12px',
-    borderRadius: 10,
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    fontSize: 12,
-    color: '#475569',
   },
   footer: {
     padding: 20,
