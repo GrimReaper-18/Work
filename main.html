@@ -917,6 +917,68 @@ body.page-exit {
 .check-btn.yes.sel  { background: var(--green); border-color: var(--green); color: var(--white); }
 .check-btn.no.sel   { background: var(--red);   border-color: var(--red);   color: var(--white); }
 .check-btn.na.sel   { background: var(--muted); border-color: var(--muted); color: var(--white); }
+.checklist-step-indicator {
+  margin-bottom: 14px;
+}
+.checklist-step-tabs {
+  display: flex;
+  gap: 8px;
+}
+.checklist-step-tab {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 12px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.checklist-step-tab.active {
+  background: rgba(198,172,143,0.22);
+  border-color: var(--orange);
+  color: var(--charcoal);
+}
+.checklist-step {
+  display: none;
+  animation: fadeUp 0.25s ease both;
+}
+.checklist-step.active { display: block; }
+.evidence-grid {
+  display: grid;
+  gap: 14px;
+}
+.evidence-field {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+}
+.evidence-field h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--charcoal);
+}
+.evidence-field p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.evidence-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--slate);
+}
+.file-meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
 
 /* CREATE CHECKLIST MODAL */
 .create-step-indicator {
@@ -1489,10 +1551,7 @@ body.page-exit {
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer">
       <div id="modal-score" style="font-family:var(--font-m);font-size:12px;color:var(--muted)">0 / 0 answered</div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="closeModal()">Save draft</button>
-        <button class="btn btn-primary" onclick="submitChecklist()">Submit audit</button>
-      </div>
+      <div style="display:flex;gap:10px" id="modal-actions"></div>
     </div>
   </div>
 </div>
@@ -2481,11 +2540,39 @@ function openChecklist(id) {
     html += `</div>`;
   });
 
-  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="checklist-step-indicator">
+      <div class="checklist-step-tabs">
+        <div class="checklist-step-tab active" id="checklist-tab-1">Step 1: Questions</div>
+        <div class="checklist-step-tab" id="checklist-tab-2">Step 2: Evidence &amp; Output</div>
+      </div>
+    </div>
+    <div class="checklist-step active" id="checklist-step-1">${html}</div>
+    <div class="checklist-step" id="checklist-step-2">
+      <div class="step-section-title">Evidence &amp; Output</div>
+      <div class="evidence-grid">
+        <div class="evidence-field">
+          <h4>Require Photo Proof</h4>
+          <p>Upload images only. Multiple files allowed.</p>
+          <label class="evidence-toggle"><input type="checkbox" id="photo-required" checked /> Photo proof required</label>
+          <input id="photo-upload" type="file" accept="image/*" multiple onchange="updateEvidenceMeta('photo')" />
+          <div class="file-meta" id="photo-meta">No files selected</div>
+        </div>
+        <div class="evidence-field">
+          <h4>Require Document Upload</h4>
+          <p>Upload supporting files like PDF, DOC, DOCX.</p>
+          <label class="evidence-toggle"><input type="checkbox" id="doc-required" checked /> Document upload required</label>
+          <input id="doc-upload" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" multiple onchange="updateEvidenceMeta('doc')" />
+          <div class="file-meta" id="doc-meta">No files selected</div>
+        </div>
+      </div>
+    </div>`;
   document.getElementById('checklist-modal').classList.add('open');
   window.totalQs = a.questions.length;
   window.answeredQs = {};
+  window.checklistStep = 1;
   updateModalScore();
+  renderChecklistFooter();
 }
 
 function answerQ(idx, ans, btn) {
@@ -2505,6 +2592,47 @@ function updateModalScore() {
     ${nos > 0 ? `<span style="color:var(--red);margin-left:12px">⚠ ${nos} NC${nos>1?'s':''} found</span>` : ''}`;
 }
 
+function goChecklistStep(step) {
+  window.checklistStep = step;
+  document.getElementById('checklist-step-1')?.classList.toggle('active', step === 1);
+  document.getElementById('checklist-step-2')?.classList.toggle('active', step === 2);
+  document.getElementById('checklist-tab-1')?.classList.toggle('active', step === 1);
+  document.getElementById('checklist-tab-2')?.classList.toggle('active', step === 2);
+  renderChecklistFooter();
+}
+
+function renderChecklistFooter() {
+  const actionNode = document.getElementById('modal-actions');
+  if (!actionNode) return;
+  if ((window.checklistStep || 1) === 1) {
+    actionNode.innerHTML = `
+      <button class="btn btn-secondary" onclick="closeModal()">Save draft</button>
+      <button class="btn btn-primary" onclick="goToEvidenceStep()">Next</button>`;
+    return;
+  }
+  actionNode.innerHTML = `
+    <button class="btn btn-secondary" onclick="goChecklistStep(1)">Back</button>
+    <button class="btn btn-primary" onclick="submitChecklist()">Submit Checklist</button>`;
+}
+
+function goToEvidenceStep() {
+  const answered = Object.keys(window.answeredQs || {}).length;
+  const total = window.totalQs || 0;
+  if (answered < total) {
+    showToast('Please answer all checklist questions before continuing', 'warning');
+    return;
+  }
+  goChecklistStep(2);
+}
+
+function updateEvidenceMeta(type) {
+  const input = document.getElementById(type === 'photo' ? 'photo-upload' : 'doc-upload');
+  const meta = document.getElementById(type === 'photo' ? 'photo-meta' : 'doc-meta');
+  if (!input || !meta) return;
+  const count = input.files?.length || 0;
+  meta.textContent = count ? `${count} file${count !== 1 ? 's' : ''} selected` : 'No files selected';
+}
+
 function closeModal() {
   document.getElementById('checklist-modal').classList.remove('open');
 }
@@ -2512,13 +2640,26 @@ function closeModal() {
 function submitChecklist() {
   const answered = Object.keys(window.answeredQs || {}).length;
   const total    = window.totalQs || 1;
-  if (answered < total * 0.5) {
-    showToast('Please answer at least 50% of questions', 'warning');
+  if (answered < total) {
+    showToast('Please answer all checklist questions before submitting', 'warning');
+    goChecklistStep(1);
+    return;
+  }
+  const photoRequired = document.getElementById('photo-required')?.checked;
+  const docRequired = document.getElementById('doc-required')?.checked;
+  const photoCount = document.getElementById('photo-upload')?.files?.length || 0;
+  const docCount = document.getElementById('doc-upload')?.files?.length || 0;
+  if (photoRequired && photoCount < 1) {
+    showToast('Photo proof is required before submitting', 'warning');
+    return;
+  }
+  if (docRequired && docCount < 1) {
+    showToast('Document upload is required before submitting', 'warning');
     return;
   }
   const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
   closeModal();
-  showToast(`✅ Audit submitted! ${nos} action${nos!==1?'s':''} auto-created for non-compliances`, 'success');
+  showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
   if (nos > 0) {
     DATA.actions.unshift({
       id: Date.now(), title: `Fix ${nos} audit finding${nos>1?'s':''}`, linked:'Audit submission',
