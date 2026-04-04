@@ -1069,6 +1069,12 @@ body.page-exit {
   font-size: 12px;
   color: var(--slate);
 }
+.assignment-message {
+  margin-top: 6px;
+  font-size: 12px;
+}
+.assignment-message.success { color: #1f6d42; }
+.assignment-message.warning { color: #915f00; }
 
 /* ─────────────────────────────────────────────────────────────────────
    ACTIONS PAGE
@@ -1650,9 +1656,11 @@ body.page-exit {
             <div class="create-form-grid">
               <div class="form-field">
                 <label for="new-assigned-to">Assigned To</label>
-                <select id="new-assigned-to">
-                  <option value="">Select employee</option>
+                <select id="new-assigned-to" onchange="updateAssignedEmployeeFromRole()">
+                  <option value="">Select role/designation</option>
                 </select>
+                <input id="new-assigned-employee-id" type="hidden" />
+                <div class="assignment-message" id="assignment-message"></div>
               </div>
               <div class="form-field">
                 <label for="new-reviewer">Reviewer</label>
@@ -2382,21 +2390,57 @@ function getCreateChecklistDateValidationMessage() {
 
 function populateAssignedToOptions() {
   const select = document.getElementById('new-assigned-to');
+  const assignmentMessage = document.getElementById('assignment-message');
+  const assignedEmployeeId = document.getElementById('new-assigned-employee-id');
   if (!select) return;
 
   const employees = Array.isArray(DATA?.people) ? DATA.people : [];
   if (!employees.length) {
-    select.innerHTML = '<option value="">No employees available</option>';
+    select.innerHTML = '<option value="">No role/designation available</option>';
     select.value = '';
     select.disabled = true;
+    if (assignedEmployeeId) assignedEmployeeId.value = '';
+    if (assignmentMessage) {
+      assignmentMessage.textContent = '';
+      assignmentMessage.className = 'assignment-message';
+    }
     return;
   }
 
   select.disabled = false;
-  const employeeOptions = employees
-    .map(p => `<option value="${p.id}">${p.name}</option>`)
+  const roleOptions = [...new Set(employees.map(p => p.role).filter(Boolean))]
+    .map(role => `<option value="${role}">${role}</option>`)
     .join('');
-  select.innerHTML = `<option value="">Select employee</option>${employeeOptions}`;
+  select.innerHTML = `<option value="">Select role/designation</option>${roleOptions}`;
+  updateAssignedEmployeeFromRole();
+}
+
+function updateAssignedEmployeeFromRole() {
+  const select = document.getElementById('new-assigned-to');
+  const assignmentMessage = document.getElementById('assignment-message');
+  const assignedEmployeeId = document.getElementById('new-assigned-employee-id');
+  if (!select || !assignmentMessage || !assignedEmployeeId) return;
+
+  const selectedRole = select.value;
+  if (!selectedRole) {
+    assignedEmployeeId.value = '';
+    assignmentMessage.textContent = '';
+    assignmentMessage.className = 'assignment-message';
+    return;
+  }
+
+  const matchedEmployee = (Array.isArray(DATA?.people) ? DATA.people : [])
+    .find(person => person.role === selectedRole);
+  if (matchedEmployee) {
+    assignedEmployeeId.value = matchedEmployee.id;
+    assignmentMessage.textContent = `Assigned employee: ${matchedEmployee.name}`;
+    assignmentMessage.className = 'assignment-message success';
+    return;
+  }
+
+  assignedEmployeeId.value = '';
+  assignmentMessage.textContent = 'No employee assigned to this role';
+  assignmentMessage.className = 'assignment-message warning';
 }
 
 function isCreateStepValid(step) {
@@ -2445,7 +2489,7 @@ function updateCreateChecklistStepUI() {
 function createChecklistNextStep() {
   if (!isCreateStepValid(createChecklistStep)) {
     if (createChecklistStep === 3 && !document.getElementById('new-assigned-to').value) {
-      showToast('Please select an employee before creating checklist', 'warning');
+      showToast('Please select a role/designation before creating checklist', 'warning');
       return;
     }
     const dateValidationMessage = getCreateChecklistDateValidationMessage();
@@ -2465,6 +2509,7 @@ function resetCreateChecklistForm() {
   const form = document.querySelector('#create-checklist-modal form');
   if (form) form.reset();
   populateAssignedToOptions();
+  updateAssignedEmployeeFromRole();
   createChecklistStep = 1;
   updateCustomFrequencyFields();
   updateCreateChecklistStepUI();
@@ -2474,7 +2519,7 @@ function submitCreateChecklist(event) {
   event.preventDefault();
   if (!isCreateStepValid(1) || !isCreateStepValid(2) || !isCreateStepValid(3)) {
     if (!document.getElementById('new-assigned-to').value) {
-      showToast('Please select an employee before creating checklist', 'warning');
+      showToast('Please select a role/designation before creating checklist', 'warning');
       return;
     }
     const dateValidationMessage = getCreateChecklistDateValidationMessage();
