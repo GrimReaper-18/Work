@@ -11,9 +11,17 @@ const initialFormData = {
   frequency: '',
   customStartDate: '',
   customDueDate: '',
-  assignedTo: '',
+  assignedToRole: '',
+  assignedToEmployeeId: '',
   reviewer: '',
 };
+
+const employeeDirectory = [
+  { id: 'emp-101', name: 'Aarav Sharma', designation: 'Production Supervisor' },
+  { id: 'emp-102', name: 'Priya Nair', designation: 'Safety Officer' },
+  { id: 'emp-103', name: 'Kunal Iyer', designation: 'Maintenance Lead' },
+  { id: 'emp-104', name: 'Neha Gupta', designation: 'Safety Officer' },
+];
 
 function Drawer({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -145,7 +153,7 @@ function Step2({ data, onChange }) {
   );
 }
 
-function Step3({ data, onChange }) {
+function Step3({ data, onChange, roleOptions, selectedEmployeeName, assignmentMessage }) {
   return (
     <div style={styles.stepBody}>
       <h3 style={styles.sectionHeading}>Responsibility</h3>
@@ -154,12 +162,21 @@ function Step3({ data, onChange }) {
         <div style={styles.responsibilityGrid}>
           <label style={styles.label}>
             Assigned To
-            <select style={styles.input} value={data.assignedTo} onChange={(e) => onChange('assignedTo', e.target.value)}>
-              <option value="">Select person / role</option>
-              <option>Production Supervisor</option>
-              <option>Safety Officer</option>
-              <option>Maintenance Lead</option>
+            <select
+              style={styles.input}
+              value={data.assignedToRole}
+              onChange={(e) => onChange('assignedToRole', e.target.value)}
+            >
+              <option value="">Select role/designation</option>
+              {roleOptions.map((designation) => (
+                <option key={designation} value={designation}>
+                  {designation}
+                </option>
+              ))}
             </select>
+            {assignmentMessage && (
+              <span style={selectedEmployeeName ? styles.successMessage : styles.warningMessage}>{assignmentMessage}</span>
+            )}
           </label>
 
           <label style={styles.label}>
@@ -182,12 +199,33 @@ export default function CreateChecklistDrawer() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
 
+  const roleOptions = useMemo(
+    () => [...new Set(employeeDirectory.map((employee) => employee.designation))],
+    []
+  );
+
+  const selectedEmployee = useMemo(
+    () => employeeDirectory.find((employee) => employee.id === formData.assignedToEmployeeId) || null,
+    [formData.assignedToEmployeeId]
+  );
+
+  const assignmentMessage = useMemo(() => {
+    if (!formData.assignedToRole) return '';
+    if (!selectedEmployee) return 'No employee assigned to this role';
+    return `Assigned employee: ${selectedEmployee.name}`;
+  }, [formData.assignedToRole, selectedEmployee]);
+
   const updateFormData = (key, value) => {
     setFormData((prev) => {
       const next = { ...prev, [key]: value };
       if (key === 'frequency' && value !== 'Custom') {
         next.customStartDate = '';
         next.customDueDate = '';
+      }
+      if (key === 'assignedToRole') {
+        const mappedEmployee =
+          employeeDirectory.find((employee) => employee.designation === value) || null;
+        next.assignedToEmployeeId = mappedEmployee ? mappedEmployee.id : '';
       }
       return next;
     });
@@ -207,7 +245,7 @@ export default function CreateChecklistDrawer() {
       return true;
     }
 
-    return Boolean(formData.assignedTo && formData.reviewer);
+    return Boolean(formData.assignedToRole && formData.reviewer);
   }, [formData, step]);
 
   const openDrawer = () => {
@@ -258,7 +296,15 @@ export default function CreateChecklistDrawer() {
           <div style={styles.stepContainer}>
             {step === 1 && <Step1 data={formData} onChange={updateFormData} />}
             {step === 2 && <Step2 data={formData} onChange={updateFormData} />}
-            {step === 3 && <Step3 data={formData} onChange={updateFormData} />}
+            {step === 3 && (
+              <Step3
+                data={formData}
+                onChange={updateFormData}
+                roleOptions={roleOptions}
+                selectedEmployeeName={selectedEmployee?.name}
+                assignmentMessage={assignmentMessage}
+              />
+            )}
           </div>
 
           <div style={styles.footer}>
@@ -420,6 +466,14 @@ const styles = {
     color: '#374151',
     fontSize: 13,
     fontWeight: 500,
+  },
+  successMessage: {
+    fontSize: 12,
+    color: '#065f46',
+  },
+  warningMessage: {
+    fontSize: 12,
+    color: '#b45309',
   },
   input: {
     height: 38,
