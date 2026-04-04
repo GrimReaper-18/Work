@@ -15,22 +15,22 @@ const initialForm = {
   escalation: '',
 };
 
-const STEP_TITLES = ['Basic Info', 'Schedule', 'Ownership'];
+const STEP_TITLES = ['Step 1: Basic Info', 'Step 2: Schedule', 'Step 3: Ownership'];
 
 export default function CreateChecklistDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
 
-  const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
+  const progress = useMemo(() => (currentStep / TOTAL_STEPS) * 100, [currentStep]);
 
   const canMoveNext = useMemo(() => {
-    if (step === 1) {
+    if (currentStep === 1) {
       return Boolean(formData.checklistName.trim() && formData.category && formData.location);
     }
 
-    if (step === 2) {
+    if (currentStep === 2) {
       const hasBaseFields = Boolean(formData.department && formData.frequency);
       if (!hasBaseFields) return false;
 
@@ -41,37 +41,47 @@ export default function CreateChecklistDrawer() {
       return true;
     }
 
-    return true;
-  }, [formData, step]);
+    return false;
+  }, [currentStep, formData]);
 
   const openDrawer = () => setIsOpen(true);
 
   const closeDrawer = () => {
     setIsOpen(false);
-    setStep(1);
+    setCurrentStep(1);
     setErrors({});
   };
 
   const updateField = (key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: '' }));
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === 'frequency' && value !== 'Custom') {
+        next.customStartDate = '';
+        next.customDueDate = '';
+      }
+      return next;
+    });
 
-    if (key === 'frequency' && value !== 'Custom') {
-      setFormData((prev) => ({ ...prev, customStartDate: '', customDueDate: '' }));
-      setErrors((prev) => ({ ...prev, customStartDate: '', customDueDate: '' }));
-    }
+    setErrors((prev) => {
+      const next = { ...prev, [key]: '' };
+      if (key === 'frequency' && value !== 'Custom') {
+        next.customStartDate = '';
+        next.customDueDate = '';
+      }
+      return next;
+    });
   };
 
   const validateStep = () => {
     const nextErrors = {};
 
-    if (step === 1) {
+    if (currentStep === 1) {
       if (!formData.checklistName.trim()) nextErrors.checklistName = 'Checklist name is required.';
       if (!formData.category) nextErrors.category = 'Please select a category.';
       if (!formData.location) nextErrors.location = 'Please select a location.';
     }
 
-    if (step === 2) {
+    if (currentStep === 2) {
       if (!formData.department) nextErrors.department = 'Department is required.';
       if (!formData.frequency) nextErrors.frequency = 'Frequency is required.';
 
@@ -88,7 +98,7 @@ export default function CreateChecklistDrawer() {
       }
     }
 
-    if (step === 3) {
+    if (currentStep === 3) {
       if (!formData.responsibility.trim()) nextErrors.responsibility = 'Responsibility is required.';
       if (!formData.alerts) nextErrors.alerts = 'Please select alert preference.';
       if (!formData.escalation) nextErrors.escalation = 'Please select escalation rule.';
@@ -100,16 +110,15 @@ export default function CreateChecklistDrawer() {
 
   const handleNext = () => {
     if (!validateStep()) return;
-    setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+    setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
-  const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
+  const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!validateStep()) return;
 
-    // Replace with API call
     console.log('Checklist payload', formData);
 
     closeDrawer();
@@ -118,7 +127,6 @@ export default function CreateChecklistDrawer() {
 
   const fieldClass =
     'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100';
-
   const labelClass = 'mb-1.5 block text-sm font-medium text-slate-700';
 
   return (
@@ -135,13 +143,13 @@ export default function CreateChecklistDrawer() {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]" onClick={closeDrawer} />
 
-          <aside className="absolute right-0 top-0 h-full w-full max-w-[460px] translate-x-0 overflow-hidden bg-slate-50 shadow-2xl transition-all duration-300 sm:w-[460px]">
+          <aside className="absolute right-0 top-0 h-full w-full max-w-[460px] overflow-hidden bg-slate-50 shadow-2xl sm:w-[460px]">
             <form onSubmit={handleSubmit} className="flex h-full flex-col">
               <header className="border-b border-slate-200 bg-white px-6 py-4">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">Create Checklist</h2>
-                    <p className="text-sm text-slate-500">Step {step} of {TOTAL_STEPS}</p>
+                    <p className="text-sm text-slate-500">Step {currentStep} of {TOTAL_STEPS}</p>
                   </div>
                   <button
                     type="button"
@@ -163,8 +171,8 @@ export default function CreateChecklistDrawer() {
                 <div className="flex items-center justify-between gap-2 text-xs">
                   {STEP_TITLES.map((title, index) => {
                     const stepNumber = index + 1;
-                    const isActive = step === stepNumber;
-                    const isDone = step > stepNumber;
+                    const isActive = currentStep === stepNumber;
+                    const isDone = currentStep > stepNumber;
 
                     return (
                       <div
@@ -185,8 +193,8 @@ export default function CreateChecklistDrawer() {
               </header>
 
               <div className="relative flex-1 overflow-y-auto px-6 py-5">
-                <div key={step} className="space-y-5 transition-opacity duration-300">
-                  {step === 1 && (
+                <div key={currentStep} className="space-y-5 animate-[fadeIn_.2s_ease]">
+                  {currentStep === 1 && (
                     <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
                       <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Basic Info</h3>
                       <div className="space-y-4">
@@ -209,7 +217,7 @@ export default function CreateChecklistDrawer() {
                             onChange={(e) => updateField('category', e.target.value)}
                           >
                             <option value="">Select category</option>
-                            {['Safety / EHS', 'Statutory', 'OEM', 'Internal', 'PPE'].map((item) => (
+                            {['Safety/EHS', 'Statutory', 'OEM', 'Internal', 'PPE'].map((item) => (
                               <option key={item} value={item}>{item}</option>
                             ))}
                           </select>
@@ -234,7 +242,7 @@ export default function CreateChecklistDrawer() {
                     </section>
                   )}
 
-                  {step === 2 && (
+                  {currentStep === 2 && (
                     <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
                       <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Schedule</h3>
                       <div className="space-y-4">
@@ -298,55 +306,53 @@ export default function CreateChecklistDrawer() {
                     </section>
                   )}
 
-                  {step === 3 && (
-                    <section className="space-y-5">
-                      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-                        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Ownership & Alerts</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <label className={labelClass}>Responsibility</label>
-                            <select
-                              className={fieldClass}
-                              value={formData.responsibility}
-                              onChange={(e) => updateField('responsibility', e.target.value)}
-                            >
-                              <option value="">Select responsibility</option>
-                              {['Operator', 'Supervisor', 'Department Head', 'EHS Officer'].map((item) => (
-                                <option key={item} value={item}>{item}</option>
-                              ))}
-                            </select>
-                            {errors.responsibility && <p className="mt-1 text-xs text-rose-600">{errors.responsibility}</p>}
-                          </div>
+                  {currentStep === 3 && (
+                    <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+                      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Ownership & Alerts</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className={labelClass}>Responsibility</label>
+                          <select
+                            className={fieldClass}
+                            value={formData.responsibility}
+                            onChange={(e) => updateField('responsibility', e.target.value)}
+                          >
+                            <option value="">Select responsibility</option>
+                            {['Operator', 'Supervisor', 'Department Head', 'EHS Officer'].map((item) => (
+                              <option key={item} value={item}>{item}</option>
+                            ))}
+                          </select>
+                          {errors.responsibility && <p className="mt-1 text-xs text-rose-600">{errors.responsibility}</p>}
+                        </div>
 
-                          <div>
-                            <label className={labelClass}>Alerts</label>
-                            <select
-                              className={fieldClass}
-                              value={formData.alerts}
-                              onChange={(e) => updateField('alerts', e.target.value)}
-                            >
-                              <option value="">Select alert preference</option>
-                              {['None', 'On due date', '1 day before', '3 days before'].map((item) => (
-                                <option key={item} value={item}>{item}</option>
-                              ))}
-                            </select>
-                            {errors.alerts && <p className="mt-1 text-xs text-rose-600">{errors.alerts}</p>}
-                          </div>
+                        <div>
+                          <label className={labelClass}>Alerts</label>
+                          <select
+                            className={fieldClass}
+                            value={formData.alerts}
+                            onChange={(e) => updateField('alerts', e.target.value)}
+                          >
+                            <option value="">Select alert preference</option>
+                            {['None', 'On due date', '1 day before', '3 days before'].map((item) => (
+                              <option key={item} value={item}>{item}</option>
+                            ))}
+                          </select>
+                          {errors.alerts && <p className="mt-1 text-xs text-rose-600">{errors.alerts}</p>}
+                        </div>
 
-                          <div>
-                            <label className={labelClass}>Escalation</label>
-                            <select
-                              className={fieldClass}
-                              value={formData.escalation}
-                              onChange={(e) => updateField('escalation', e.target.value)}
-                            >
-                              <option value="">Select escalation</option>
-                              {['No escalation', 'Escalate to Supervisor', 'Escalate to Manager', 'Escalate to Admin'].map((item) => (
-                                <option key={item} value={item}>{item}</option>
-                              ))}
-                            </select>
-                            {errors.escalation && <p className="mt-1 text-xs text-rose-600">{errors.escalation}</p>}
-                          </div>
+                        <div>
+                          <label className={labelClass}>Escalation</label>
+                          <select
+                            className={fieldClass}
+                            value={formData.escalation}
+                            onChange={(e) => updateField('escalation', e.target.value)}
+                          >
+                            <option value="">Select escalation</option>
+                            {['No escalation', 'Escalate to Supervisor', 'Escalate to Manager', 'Escalate to Admin'].map((item) => (
+                              <option key={item} value={item}>{item}</option>
+                            ))}
+                          </select>
+                          {errors.escalation && <p className="mt-1 text-xs text-rose-600">{errors.escalation}</p>}
                         </div>
                       </div>
                     </section>
@@ -355,16 +361,19 @@ export default function CreateChecklistDrawer() {
               </div>
 
               <footer className="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-4">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={step === 1}
-                  className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Back
-                </button>
+                {currentStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Back
+                  </button>
+                ) : (
+                  <span />
+                )}
 
-                {step < TOTAL_STEPS ? (
+                {currentStep < TOTAL_STEPS ? (
                   <button
                     type="button"
                     onClick={handleNext}
