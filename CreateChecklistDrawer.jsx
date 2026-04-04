@@ -7,14 +7,15 @@ const initialForm = {
   category: '',
   location: '',
   department: '',
-  lawStandard: '',
   frequency: '',
   customStartDate: '',
   customDueDate: '',
-  assignedTo: '',
-  reviewer: '',
-  reminder: '',
+  responsibility: '',
+  alerts: '',
+  escalation: '',
 };
+
+const STEP_TITLES = ['Basic Info', 'Schedule', 'Ownership'];
 
 export default function CreateChecklistDrawer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +24,25 @@ export default function CreateChecklistDrawer() {
   const [errors, setErrors] = useState({});
 
   const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
+
+  const canMoveNext = useMemo(() => {
+    if (step === 1) {
+      return Boolean(formData.checklistName.trim() && formData.category && formData.location);
+    }
+
+    if (step === 2) {
+      const hasBaseFields = Boolean(formData.department && formData.frequency);
+      if (!hasBaseFields) return false;
+
+      if (formData.frequency === 'Custom') {
+        return Boolean(formData.customStartDate && formData.customDueDate);
+      }
+
+      return true;
+    }
+
+    return true;
+  }, [formData, step]);
 
   const openDrawer = () => setIsOpen(true);
 
@@ -35,6 +55,11 @@ export default function CreateChecklistDrawer() {
   const updateField = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: '' }));
+
+    if (key === 'frequency' && value !== 'Custom') {
+      setFormData((prev) => ({ ...prev, customStartDate: '', customDueDate: '' }));
+      setErrors((prev) => ({ ...prev, customStartDate: '', customDueDate: '' }));
+    }
   };
 
   const validateStep = () => {
@@ -52,17 +77,21 @@ export default function CreateChecklistDrawer() {
 
       if (formData.frequency === 'Custom') {
         if (!formData.customStartDate) nextErrors.customStartDate = 'Start date is required for custom frequency.';
-
-        const due = Number(formData.customDueDate);
-        if (!formData.customDueDate) nextErrors.customDueDate = 'Due rule is required.';
-        if (formData.customDueDate && (due < 1 || due > 31)) nextErrors.customDueDate = 'Due date must be between 1 and 31.';
+        if (!formData.customDueDate) nextErrors.customDueDate = 'Due date is required for custom frequency.';
+        if (
+          formData.customStartDate &&
+          formData.customDueDate &&
+          formData.customDueDate < formData.customStartDate
+        ) {
+          nextErrors.customDueDate = 'Due date must be on or after start date.';
+        }
       }
     }
 
     if (step === 3) {
-      if (!formData.assignedTo.trim()) nextErrors.assignedTo = 'Assigned To is required.';
-      if (!formData.reviewer.trim()) nextErrors.reviewer = 'Reviewer is required.';
-      if (!formData.reminder) nextErrors.reminder = 'Reminder is required.';
+      if (!formData.responsibility.trim()) nextErrors.responsibility = 'Responsibility is required.';
+      if (!formData.alerts) nextErrors.alerts = 'Please select alert preference.';
+      if (!formData.escalation) nextErrors.escalation = 'Please select escalation rule.';
     }
 
     setErrors(nextErrors);
@@ -124,16 +153,39 @@ export default function CreateChecklistDrawer() {
                   </button>
                 </div>
 
-                <div className="h-2 w-full rounded-full bg-slate-200">
+                <div className="mb-3 h-2 w-full rounded-full bg-slate-200">
                   <div
                     className="h-2 rounded-full bg-indigo-600 transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
+
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  {STEP_TITLES.map((title, index) => {
+                    const stepNumber = index + 1;
+                    const isActive = step === stepNumber;
+                    const isDone = step > stepNumber;
+
+                    return (
+                      <div
+                        key={title}
+                        className={`flex-1 rounded-lg px-2 py-1 text-center transition ${
+                          isActive
+                            ? 'bg-indigo-100 font-semibold text-indigo-700'
+                            : isDone
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {title}
+                      </div>
+                    );
+                  })}
+                </div>
               </header>
 
               <div className="relative flex-1 overflow-y-auto px-6 py-5">
-                <div className="space-y-5 transition-all duration-300">
+                <div key={step} className="space-y-5 transition-opacity duration-300">
                   {step === 1 && (
                     <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
                       <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Basic Info</h3>
@@ -184,7 +236,7 @@ export default function CreateChecklistDrawer() {
 
                   {step === 2 && (
                     <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-                      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Details</h3>
+                      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Schedule</h3>
                       <div className="space-y-4">
                         <div>
                           <label className={labelClass}>Department</label>
@@ -194,21 +246,11 @@ export default function CreateChecklistDrawer() {
                             onChange={(e) => updateField('department', e.target.value)}
                           >
                             <option value="">Select department</option>
-                            {['Production', 'Maintenance', 'HR', 'Warehouse'].map((item) => (
+                            {['Production', 'Maintenance', 'Quality', 'EHS', 'HR', 'Warehouse'].map((item) => (
                               <option key={item} value={item}>{item}</option>
                             ))}
                           </select>
                           {errors.department && <p className="mt-1 text-xs text-rose-600">{errors.department}</p>}
-                        </div>
-
-                        <div>
-                          <label className={labelClass}>Applicable Law / Standard (Optional)</label>
-                          <input
-                            className={fieldClass}
-                            value={formData.lawStandard}
-                            onChange={(e) => updateField('lawStandard', e.target.value)}
-                            placeholder="Factories Act, Fire NOC, MPCB, OEM audit..."
-                          />
                         </div>
 
                         <div>
@@ -240,15 +282,13 @@ export default function CreateChecklistDrawer() {
                             </div>
 
                             <div>
-                              <label className={labelClass}>Due Rule (Fixed date)</label>
+                              <label className={labelClass}>Due Date</label>
                               <input
-                                type="number"
-                                min={1}
-                                max={31}
+                                type="date"
                                 className={fieldClass}
                                 value={formData.customDueDate}
+                                min={formData.customStartDate || undefined}
                                 onChange={(e) => updateField('customDueDate', e.target.value)}
-                                placeholder="Enter day (1-31)"
                               />
                               {errors.customDueDate && <p className="mt-1 text-xs text-rose-600">{errors.customDueDate}</p>}
                             </div>
@@ -261,52 +301,51 @@ export default function CreateChecklistDrawer() {
                   {step === 3 && (
                     <section className="space-y-5">
                       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-                        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Responsibility</h3>
+                        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Ownership & Alerts</h3>
                         <div className="space-y-4">
                           <div>
-                            <label className={labelClass}>Assigned To</label>
-                            <input
-                              className={fieldClass}
-                              value={formData.assignedTo}
-                              onChange={(e) => updateField('assignedTo', e.target.value)}
-                              placeholder="Person / Role"
-                            />
-                            {errors.assignedTo && <p className="mt-1 text-xs text-rose-600">{errors.assignedTo}</p>}
-                          </div>
-
-                          <div>
-                            <label className={labelClass}>Reviewer</label>
-                            <input
-                              className={fieldClass}
-                              value={formData.reviewer}
-                              onChange={(e) => updateField('reviewer', e.target.value)}
-                              placeholder="Supervisor / CA / Auditor"
-                            />
-                            {errors.reviewer && <p className="mt-1 text-xs text-rose-600">{errors.reviewer}</p>}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-                        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Alerts & Escalation</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <label className={labelClass}>Reminder</label>
+                            <label className={labelClass}>Responsibility</label>
                             <select
                               className={fieldClass}
-                              value={formData.reminder}
-                              onChange={(e) => updateField('reminder', e.target.value)}
+                              value={formData.responsibility}
+                              onChange={(e) => updateField('responsibility', e.target.value)}
                             >
-                              <option value="">Select reminder</option>
-                              {['1 day before', '3 days before'].map((item) => (
+                              <option value="">Select responsibility</option>
+                              {['Operator', 'Supervisor', 'Department Head', 'EHS Officer'].map((item) => (
                                 <option key={item} value={item}>{item}</option>
                               ))}
                             </select>
-                            {errors.reminder && <p className="mt-1 text-xs text-rose-600">{errors.reminder}</p>}
+                            {errors.responsibility && <p className="mt-1 text-xs text-rose-600">{errors.responsibility}</p>}
                           </div>
 
-                          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-800">
-                            If checklist is not completed, manager will be notified automatically.
+                          <div>
+                            <label className={labelClass}>Alerts</label>
+                            <select
+                              className={fieldClass}
+                              value={formData.alerts}
+                              onChange={(e) => updateField('alerts', e.target.value)}
+                            >
+                              <option value="">Select alert preference</option>
+                              {['None', 'On due date', '1 day before', '3 days before'].map((item) => (
+                                <option key={item} value={item}>{item}</option>
+                              ))}
+                            </select>
+                            {errors.alerts && <p className="mt-1 text-xs text-rose-600">{errors.alerts}</p>}
+                          </div>
+
+                          <div>
+                            <label className={labelClass}>Escalation</label>
+                            <select
+                              className={fieldClass}
+                              value={formData.escalation}
+                              onChange={(e) => updateField('escalation', e.target.value)}
+                            >
+                              <option value="">Select escalation</option>
+                              {['No escalation', 'Escalate to Supervisor', 'Escalate to Manager', 'Escalate to Admin'].map((item) => (
+                                <option key={item} value={item}>{item}</option>
+                              ))}
+                            </select>
+                            {errors.escalation && <p className="mt-1 text-xs text-rose-600">{errors.escalation}</p>}
                           </div>
                         </div>
                       </div>
@@ -329,7 +368,8 @@ export default function CreateChecklistDrawer() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700"
+                    disabled={!canMoveNext}
+                    className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>
