@@ -1577,12 +1577,9 @@ body.page-exit {
               <label for="new-custom-start">Start Date</label>
               <input id="new-custom-start" type="date" />
             </div>
-            <div class="form-field" id="custom-due-rule-wrap" style="display:none;">
-              <label for="new-custom-due-rule">Due Rule</label>
-              <select id="new-custom-due-rule">
-                <option value="">Select due rule</option>
-                <option>Fixed date (e.g., 31st)</option>
-              </select>
+            <div class="form-field" id="custom-due-date-wrap" style="display:none;">
+              <label for="new-custom-due-date">Due Date</label>
+              <input id="new-custom-due-date" type="date" />
             </div>
           </div>
         </div>
@@ -2321,10 +2318,10 @@ const CREATE_STEP_COUNT = 3;
 function updateCustomFrequencyFields() {
   const isCustom = document.getElementById('new-freq').value === 'Custom';
   document.getElementById('custom-start-wrap').style.display = isCustom ? 'block' : 'none';
-  document.getElementById('custom-due-rule-wrap').style.display = isCustom ? 'block' : 'none';
+  document.getElementById('custom-due-date-wrap').style.display = isCustom ? 'block' : 'none';
   if (!isCustom) {
     document.getElementById('new-custom-start').value = '';
-    document.getElementById('new-custom-due-rule').value = '';
+    document.getElementById('new-custom-due-date').value = '';
   }
 }
 
@@ -2342,10 +2339,9 @@ function isCreateStepValid(step) {
     const freq = document.getElementById('new-freq').value;
     if (!department || !freq) return false;
     if (freq === 'Custom') {
-      return Boolean(
-        document.getElementById('new-custom-start').value &&
-        document.getElementById('new-custom-due-rule').value
-      );
+      const customStartDate = document.getElementById('new-custom-start').value;
+      const customDueDate = document.getElementById('new-custom-due-date').value;
+      return Boolean(customStartDate && customDueDate && customDueDate >= customStartDate);
     }
     return true;
   }

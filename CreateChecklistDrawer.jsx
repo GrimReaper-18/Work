@@ -10,7 +10,7 @@ const initialFormData = {
   applicableLaw: '',
   frequency: '',
   customStartDate: '',
-  customDueRule: '',
+  customDueDate: '',
   assignedTo: '',
   reviewer: '',
   reminder: '',
@@ -132,11 +132,13 @@ function Step2({ data, onChange }) {
           </label>
 
           <label style={styles.label}>
-            Due Rule
-            <select style={styles.input} value={data.customDueRule} onChange={(e) => onChange('customDueRule', e.target.value)}>
-              <option value="">Select due rule</option>
-              <option>Fixed date (e.g., 31st)</option>
-            </select>
+            Due Date
+            <input
+              style={styles.input}
+              type="date"
+              value={data.customDueDate}
+              onChange={(e) => onChange('customDueDate', e.target.value)}
+            />
           </label>
         </div>
       )}
@@ -201,7 +203,7 @@ export default function CreateChecklistDrawer() {
       const next = { ...prev, [key]: value };
       if (key === 'frequency' && value !== 'Custom') {
         next.customStartDate = '';
-        next.customDueRule = '';
+        next.customDueDate = '';
       }
       return next;
     });
@@ -215,7 +217,8 @@ export default function CreateChecklistDrawer() {
     if (step === 2) {
       if (!formData.department || !formData.frequency) return false;
       if (formData.frequency === 'Custom') {
-        return Boolean(formData.customStartDate && formData.customDueRule);
+        if (!formData.customStartDate || !formData.customDueDate) return false;
+        return formData.customDueDate >= formData.customStartDate;
       }
       return true;
     }
