@@ -919,6 +919,34 @@ body.page-exit {
 .check-btn.na.sel   { background: var(--muted); border-color: var(--muted); color: var(--white); }
 
 /* CREATE CHECKLIST MODAL */
+.create-step-indicator {
+  margin-bottom: 18px;
+}
+.create-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.create-step-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.create-step-fill {
+  height: 100%;
+  width: 33.333%;
+  background: var(--orange);
+  transition: width 0.2s ease;
+}
+.create-step {
+  display: none;
+}
+.create-step.active {
+  display: block;
+}
 .create-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -948,6 +976,37 @@ body.page-exit {
   box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
 }
 .form-field.full { grid-column: 1 / -1; }
+.step-section-title {
+  font-family: var(--font-d);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+}
+.sub-section {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px;
+}
+.sub-section + .sub-section {
+  margin-top: 10px;
+}
+.sub-heading {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy-mid);
+  margin-bottom: 10px;
+}
+.info-box {
+  margin-top: 14px;
+  background: rgba(198,172,143,0.28);
+  border: 1px solid var(--border-d);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--slate);
+}
 
 /* ─────────────────────────────────────────────────────────────────────
    ACTIONS PAGE
@@ -1446,59 +1505,135 @@ body.page-exit {
     <div class="modal-header">
       <div>
         <div class="modal-title">Create Checklist</div>
-        <div class="modal-sub">Add a new checklist to Audits & Checklists</div>
+        <div class="modal-sub">Configure a new checklist in 3 steps</div>
       </div>
       <div class="drawer-close" onclick="closeCreateChecklist()">×</div>
     </div>
     <form onsubmit="submitCreateChecklist(event)">
       <div class="modal-body">
-        <div class="create-form-grid">
-          <div class="form-field full">
-            <label for="new-title">Checklist title</label>
-            <input id="new-title" required placeholder="Example: Monthly Housekeeping Audit" />
+        <div class="create-step-indicator">
+          <div class="create-step-label" id="create-step-label">Step 1 / 3</div>
+          <div class="create-step-track"><div class="create-step-fill" id="create-step-fill"></div></div>
+        </div>
+
+        <div class="create-step active" id="create-step-1">
+          <div class="step-section-title">Basic Info</div>
+          <div class="create-form-grid">
+            <div class="form-field full">
+              <label for="new-title">Checklist Name</label>
+              <input id="new-title" placeholder="Enter checklist name" />
+            </div>
+            <div class="form-field">
+              <label for="new-type">Category</label>
+              <select id="new-type">
+                <option value="">Select category</option>
+                <option>Safety / EHS</option>
+                <option>Statutory</option>
+                <option>OEM</option>
+                <option>Internal</option>
+                <option>PPE</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="new-location">Location / Plant</label>
+              <select id="new-location">
+                <option value="">Select location</option>
+                <option>Plant 1</option>
+                <option>Plant 2</option>
+              </select>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="new-type">Category</label>
-            <select id="new-type" required>
-              <option value="">Select</option>
-              <option>Safety/EHS</option>
-              <option>Statutory</option>
-              <option>OEM</option>
-              <option>PPE</option>
-              <option>Internal</option>
-            </select>
+        </div>
+
+        <div class="create-step" id="create-step-2">
+          <div class="step-section-title">Configuration</div>
+          <div class="create-form-grid">
+            <div class="form-field">
+              <label for="new-department">Department</label>
+              <select id="new-department">
+                <option value="">Select department</option>
+                <option>Production</option>
+                <option>Maintenance</option>
+                <option>HR</option>
+                <option>Warehouse</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="new-law">Applicable Law / Standard (Optional)</label>
+              <input id="new-law" placeholder="e.g. Factories Act, Fire NOC" />
+            </div>
+            <div class="form-field">
+              <label for="new-freq">Frequency</label>
+              <select id="new-freq">
+                <option value="">Select frequency</option>
+                <option>Daily</option>
+                <option>Weekly</option>
+                <option>Monthly</option>
+                <option>Quarterly</option>
+                <option>Custom</option>
+              </select>
+            </div>
+            <div class="form-field" id="custom-start-wrap" style="display:none;">
+              <label for="new-custom-start">Start Date</label>
+              <input id="new-custom-start" type="date" />
+            </div>
+            <div class="form-field" id="custom-due-rule-wrap" style="display:none;">
+              <label for="new-custom-due-rule">Due Rule</label>
+              <select id="new-custom-due-rule">
+                <option value="">Select due rule</option>
+                <option>Fixed date (e.g., 31st)</option>
+              </select>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="new-freq">Frequency</label>
-            <select id="new-freq" required>
-              <option value="">Select</option>
-              <option>Daily</option>
-              <option>Weekly</option>
-              <option>Monthly</option>
-              <option>Quarterly</option>
-              <option>As needed</option>
-            </select>
+        </div>
+
+        <div class="create-step" id="create-step-3">
+          <div class="step-section-title">Responsibility + Alerts</div>
+          <div class="sub-section">
+            <div class="sub-heading">Responsibility</div>
+            <div class="create-form-grid">
+              <div class="form-field">
+                <label for="new-assigned-to">Assigned To</label>
+                <select id="new-assigned-to">
+                  <option value="">Select person / role</option>
+                  <option>Production Supervisor</option>
+                  <option>Safety Officer</option>
+                  <option>Maintenance Lead</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="new-reviewer">Reviewer</label>
+                <select id="new-reviewer">
+                  <option value="">Select reviewer</option>
+                  <option>Supervisor</option>
+                  <option>CA</option>
+                  <option>Auditor</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="new-due">Due date</label>
-            <input id="new-due" type="date" required />
+          <div class="sub-section">
+            <div class="sub-heading">Alerts</div>
+            <div class="form-field">
+              <label for="new-reminder">Reminder</label>
+              <select id="new-reminder">
+                <option value="">Select reminder</option>
+                <option>1 day before</option>
+                <option>3 days before</option>
+              </select>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="new-plant">Plant</label>
-            <select id="new-plant" required>
-              <option value="">Select</option>
-              <option>Chakan MIDC</option>
-              <option>Ranjan Engineering</option>
-              <option>Plant 2</option>
-            </select>
+          <div class="info-box">
+            If checklist is not completed, manager will be notified automatically.
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <span style="font-size:12px;color:var(--muted)">Questions can be added from the checklist detail drawer.</span>
         <div style="display:flex;gap:10px">
           <button type="button" class="btn btn-secondary" onclick="closeCreateChecklist()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create checklist</button>
+          <button type="button" class="btn btn-secondary" id="create-back-btn" onclick="createChecklistPrevStep()" style="display:none;">Back</button>
+          <button type="button" class="btn btn-primary" id="create-next-btn" onclick="createChecklistNextStep()">Next</button>
+          <button type="submit" class="btn btn-primary" id="create-submit-btn" style="display:none;">Create checklist</button>
         </div>
       </div>
     </form>
@@ -2172,6 +2307,7 @@ function audits() {
 }
 
 function openCreateChecklist() {
+  resetCreateChecklistForm();
   document.getElementById('create-checklist-modal').classList.add('open');
 }
 
@@ -2179,37 +2315,109 @@ function closeCreateChecklist() {
   document.getElementById('create-checklist-modal').classList.remove('open');
 }
 
+let createChecklistStep = 1;
+const CREATE_STEP_COUNT = 3;
+
+function updateCustomFrequencyFields() {
+  const isCustom = document.getElementById('new-freq').value === 'Custom';
+  document.getElementById('custom-start-wrap').style.display = isCustom ? 'block' : 'none';
+  document.getElementById('custom-due-rule-wrap').style.display = isCustom ? 'block' : 'none';
+  if (!isCustom) {
+    document.getElementById('new-custom-start').value = '';
+    document.getElementById('new-custom-due-rule').value = '';
+  }
+}
+
+function isCreateStepValid(step) {
+  if (step === 1) {
+    return Boolean(
+      document.getElementById('new-title').value.trim() &&
+      document.getElementById('new-type').value &&
+      document.getElementById('new-location').value
+    );
+  }
+
+  if (step === 2) {
+    const department = document.getElementById('new-department').value;
+    const freq = document.getElementById('new-freq').value;
+    if (!department || !freq) return false;
+    if (freq === 'Custom') {
+      return Boolean(
+        document.getElementById('new-custom-start').value &&
+        document.getElementById('new-custom-due-rule').value
+      );
+    }
+    return true;
+  }
+
+  if (step === 3) {
+    return Boolean(
+      document.getElementById('new-assigned-to').value &&
+      document.getElementById('new-reviewer').value &&
+      document.getElementById('new-reminder').value
+    );
+  }
+
+  return false;
+}
+
+function updateCreateChecklistStepUI() {
+  for (let s = 1; s <= CREATE_STEP_COUNT; s++) {
+    document.getElementById(`create-step-${s}`).classList.toggle('active', s === createChecklistStep);
+  }
+  document.getElementById('create-step-label').textContent = `Step ${createChecklistStep} / ${CREATE_STEP_COUNT}`;
+  document.getElementById('create-step-fill').style.width = `${(createChecklistStep / CREATE_STEP_COUNT) * 100}%`;
+  document.getElementById('create-back-btn').style.display = createChecklistStep === 1 ? 'none' : 'inline-flex';
+  document.getElementById('create-next-btn').style.display = createChecklistStep === CREATE_STEP_COUNT ? 'none' : 'inline-flex';
+  document.getElementById('create-submit-btn').style.display = createChecklistStep === CREATE_STEP_COUNT ? 'inline-flex' : 'none';
+}
+
+function createChecklistNextStep() {
+  if (!isCreateStepValid(createChecklistStep)) {
+    showToast('Please complete required fields before continuing', 'warning');
+    return;
+  }
+  createChecklistStep = Math.min(CREATE_STEP_COUNT, createChecklistStep + 1);
+  updateCreateChecklistStepUI();
+}
+
+function createChecklistPrevStep() {
+  createChecklistStep = Math.max(1, createChecklistStep - 1);
+  updateCreateChecklistStepUI();
+}
+
+function resetCreateChecklistForm() {
+  const form = document.querySelector('#create-checklist-modal form');
+  if (form) form.reset();
+  createChecklistStep = 1;
+  updateCustomFrequencyFields();
+  updateCreateChecklistStepUI();
+}
+
 function submitCreateChecklist(event) {
   event.preventDefault();
-  const title = document.getElementById('new-title').value.trim();
-  const type = document.getElementById('new-type').value;
-  const freq = document.getElementById('new-freq').value;
-  const due = document.getElementById('new-due').value;
-  const plant = document.getElementById('new-plant').value;
-
-  if (!title || !type || !freq || !due || !plant) {
+  if (!isCreateStepValid(1) || !isCreateStepValid(2) || !isCreateStepValid(3)) {
     showToast('Please fill all required fields', 'warning');
     return;
   }
 
-  const today = new Date();
-  const dueDate = new Date(`${due}T00:00:00`);
-  let status = 'upcoming';
-  if (dueDate < today) status = 'overdue';
-  else if ((dueDate - today) / (1000 * 60 * 60 * 24) <= 7) status = 'due';
+  const title = document.getElementById('new-title').value.trim();
+  const type = document.getElementById('new-type').value;
+  const freq = document.getElementById('new-freq').value;
+  const plant = document.getElementById('new-location').value;
 
   DATA.audits.unshift({
     id: `A${String(Date.now()).slice(-6)}`,
     type,
     title,
     freq,
-    due,
-    status,
+    due: freq === 'Daily' ? 'Today' : freq === 'Weekly' ? 'This week' : freq === 'Monthly' ? 'This month' : 'Scheduled',
+    status: 'upcoming',
     plant,
     questions: [],
   });
 
-  event.target.reset();
+  resetCreateChecklistForm();
   closeCreateChecklist();
   showPage('audits');
   showToast('Checklist created successfully', 'success');
@@ -2711,6 +2919,8 @@ function globalSearch(q) {
 ───────────────────────────────────────────────────────── */
 // Start with onboarding, then show dashboard after
 // (modal auto-triggers, dashboard shown after completion)
+document.getElementById('new-freq').addEventListener('change', updateCustomFrequencyFields);
+resetCreateChecklistForm();
 </script>
 </body>
 </html>
