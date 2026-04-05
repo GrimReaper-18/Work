@@ -2270,7 +2270,11 @@ function runOnboardingLoad() {
 /* ─────────────────────────────────────────────────────────
    NAVIGATION
 ───────────────────────────────────────────────────────── */
+let currentPage = 'dashboard';
+let activePeopleTab = 'employees';
+
 function showPage(page) {
+  currentPage = page;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const navEl = document.getElementById('nav-' + page);
   if (navEl) navEl.classList.add('active');
@@ -2850,6 +2854,17 @@ function generateEmployeeId() {
   return `EMP-${maxId + 1}`;
 }
 
+function resolveUniqueEmployeeId(preferredId) {
+  const normalizedPreferredId = String(preferredId || '').trim();
+  if (
+    normalizedPreferredId &&
+    !DATA.people.some((person) => String(person.id).toLowerCase() === normalizedPreferredId.toLowerCase())
+  ) {
+    return normalizedPreferredId;
+  }
+  return generateEmployeeId();
+}
+
 function openAddEmployeeDrawer() {
   resetAddEmployeeForm();
   document.getElementById('add-employee-overlay').classList.add('open');
@@ -2989,7 +3004,29 @@ function submitAddEmployee(event) {
     },
   };
 
+  const employeeId = resolveUniqueEmployeeId(payload.basicDetails.employeeId);
+  const newEmployee = {
+    id: employeeId,
+    name: payload.basicDetails.fullName,
+    dept: payload.workDetails.department,
+    role: payload.workDetails.role,
+    pf: payload.compliance.pfApplicable,
+    esi: payload.compliance.esiApplicable,
+    uan: payload.compliance.pfApplicable ? (payload.compliance.pfNumber || '') : '—',
+    ip: payload.compliance.esiApplicable ? (payload.compliance.esiNumber || '') : '—',
+    medical: payload.safety.medicalFitnessStatus === 'Fit' ? 'Fit' : 'Pending',
+    trainings: payload.safety.trainingCompleted,
+  };
+
+  setPeople((prev) => [
+    ...prev,
+    newEmployee,
+  ]);
+  refreshPeopleUI();
+  populateAssignedToOptions();
+
   console.log('Employee created payload:', payload);
+  resetAddEmployeeForm();
   closeAddEmployeeDrawer();
   showToast('Employee created successfully', 'success');
 }
@@ -3270,6 +3307,13 @@ function markActionDone(id) {
 const trainings = ['Induction','PPE','Hot Work','Crane OHC','Fire Safety','First Aid','Foundry Safety'];
 
 function people() {
+  const tabContentMap = {
+    employees: peopleEmployees,
+    training: peopleTraining,
+    pfesi: peoplePFESI,
+  };
+  const selectedTabRenderer = tabContentMap[activePeopleTab] || peopleEmployees;
+
   return `
   <div class="fade-up">
     <div class="page-header">
@@ -3281,22 +3325,41 @@ function people() {
     </div>
 
     <div class="people-tabs">
-      <div class="people-tab active" id="tab-employees" onclick="switchPeopleTab('employees')">Employee Register</div>
-      <div class="people-tab" id="tab-training" onclick="switchPeopleTab('training')">Training Matrix</div>
-      <div class="people-tab" id="tab-pfesi" onclick="switchPeopleTab('pfesi')">PF / ESI Status</div>
+      <div class="people-tab ${activePeopleTab === 'employees' ? 'active' : ''}" id="tab-employees" onclick="switchPeopleTab('employees')">Employee Register</div>
+      <div class="people-tab ${activePeopleTab === 'training' ? 'active' : ''}" id="tab-training" onclick="switchPeopleTab('training')">Training Matrix</div>
+      <div class="people-tab ${activePeopleTab === 'pfesi' ? 'active' : ''}" id="tab-pfesi" onclick="switchPeopleTab('pfesi')">PF / ESI Status</div>
     </div>
 
     <div id="people-content">
-      ${peopleEmployees()}
+      ${selectedTabRenderer()}
     </div>
   </div>`;
 }
 
 function switchPeopleTab(tab) {
+  activePeopleTab = tab;
   document.querySelectorAll('.people-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   const map = { employees: peopleEmployees, training: peopleTraining, pfesi: peoplePFESI };
   document.getElementById('people-content').innerHTML = (map[tab] || peopleEmployees)();
+}
+
+function setPeople(updater) {
+  const previousPeople = Array.isArray(DATA.people) ? DATA.people : [];
+  const nextPeople = typeof updater === 'function' ? updater(previousPeople) : updater;
+  DATA.people = Array.isArray(nextPeople) ? nextPeople : previousPeople;
+}
+
+function refreshPeopleUI() {
+  if (currentPage !== 'people') return;
+  const pageSub = document.querySelector('#content .page-sub');
+  if (pageSub) {
+    pageSub.textContent = `${DATA.people.length} employees · PF/ESI tracking enabled`;
+  }
+  const contentNode = document.getElementById('people-content');
+  if (!contentNode) return;
+  const tabRenderMap = { employees: peopleEmployees, training: peopleTraining, pfesi: peoplePFESI };
+  contentNode.innerHTML = (tabRenderMap[activePeopleTab] || peopleEmployees)();
 }
 
 function peopleEmployees() {
