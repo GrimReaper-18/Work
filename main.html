@@ -1038,6 +1038,146 @@ body.page-exit {
   box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
 }
 .form-field.full { grid-column: 1 / -1; }
+
+/* ADD EMPLOYEE DRAWER */
+#add-employee-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(34,51,59,0.45);
+  backdrop-filter: blur(2px);
+  display: none;
+  z-index: 220;
+}
+#add-employee-overlay.open { display: block; }
+#add-employee-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(92vw, 460px);
+  height: 100vh;
+  background: var(--white);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 221;
+  display: flex;
+  flex-direction: column;
+}
+#add-employee-drawer.open { transform: translateX(0); }
+.emp-step-indicator { margin-bottom: 16px; }
+.emp-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.emp-step-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.emp-step-fill {
+  height: 100%;
+  background: var(--orange);
+  transition: width .22s ease;
+}
+.emp-step {
+  display: none;
+  animation: fadeUp .25s ease both;
+}
+.emp-step.active { display: block; }
+.emp-section-title {
+  font-family: var(--font-d);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+}
+.emp-form-grid {
+  display: grid;
+  gap: 14px;
+}
+.emp-form-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.emp-form-field input,
+.emp-form-field select {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--charcoal);
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+}
+.emp-form-field input[type="file"] {
+  height: auto;
+  padding: 9px 10px;
+}
+.emp-form-field input:focus,
+.emp-form-field select:focus {
+  border-color: var(--navy-light);
+  box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
+}
+.emp-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--slate);
+}
+.emp-check-grid {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px;
+}
+.emp-check-title {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.emp-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--charcoal);
+}
+.emp-check-item input { accent-color: var(--orange-d); }
+.emp-readonly-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.emp-readonly-chip.pending { background: rgba(198,172,143,0.24); color: var(--orange-d); }
+.emp-readonly-chip.fit { background: rgba(94,80,63,0.16); color: var(--green-d); }
+.emp-drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.btn:disabled { opacity: .55; cursor: not-allowed; }
 .step-section-title {
   font-family: var(--font-d);
   font-size: 14px;
@@ -1684,6 +1824,151 @@ body.page-exit {
         </div>
       </div>
     </form>
+  </div>
+</div>
+
+<div id="add-employee-overlay" onclick="closeAddEmployeeDrawer()"></div>
+<div id="add-employee-drawer" role="dialog" aria-modal="true" aria-label="Add Employee">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Add Employee</div>
+      <div class="drawer-sub">Capture employee details in 5 guided steps</div>
+    </div>
+    <div class="drawer-close" onclick="closeAddEmployeeDrawer()">×</div>
+  </div>
+  <div class="drawer-body">
+    <div class="emp-step-indicator">
+      <div class="emp-step-label" id="emp-step-label">Step 1 / 5</div>
+      <div class="emp-step-track"><div class="emp-step-fill" id="emp-step-fill"></div></div>
+    </div>
+
+    <form id="add-employee-form" onsubmit="submitAddEmployee(event)">
+      <section class="emp-step active" id="emp-step-1">
+        <div class="emp-section-title">Basic Details</div>
+        <div class="emp-form-grid">
+          <div class="emp-form-field">
+            <label for="emp-full-name">Full Name *</label>
+            <input id="emp-full-name" type="text" placeholder="Enter full name" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-id">Employee ID *</label>
+            <input id="emp-id" type="text" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-phone">Phone Number *</label>
+            <input id="emp-phone" type="tel" placeholder="Enter phone number" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-email">Email (Optional)</label>
+            <input id="emp-email" type="email" placeholder="name@company.com" />
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-2">
+        <div class="emp-section-title">Work Details</div>
+        <div class="emp-form-grid">
+          <div class="emp-form-field">
+            <label for="emp-dept">Department *</label>
+            <select id="emp-dept">
+              <option value="">Select department</option>
+              <option>Production</option>
+              <option>Maintenance</option>
+              <option>HR</option>
+              <option>Warehouse</option>
+            </select>
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-role">Role / Designation *</label>
+            <input id="emp-role" type="text" placeholder="Machine Operator, Supervisor" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-joining-date">Joining Date *</label>
+            <input id="emp-joining-date" type="date" />
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-3">
+        <div class="emp-section-title">Compliance Mapping</div>
+        <div class="emp-form-grid">
+          <div class="emp-toggle-row">
+            <span>PF Applicable?</span>
+            <input id="emp-pf-applicable" type="checkbox" onchange="toggleComplianceFields()" />
+          </div>
+          <div class="emp-form-field" id="emp-pf-wrap" style="display:none">
+            <label for="emp-pf-number">PF Number *</label>
+            <input id="emp-pf-number" type="text" placeholder="Enter PF number" />
+          </div>
+          <div class="emp-toggle-row">
+            <span>ESI Applicable?</span>
+            <input id="emp-esi-applicable" type="checkbox" onchange="toggleComplianceFields()" />
+          </div>
+          <div class="emp-form-field" id="emp-esi-wrap" style="display:none">
+            <label for="emp-esi-number">ESI Number *</label>
+            <input id="emp-esi-number" type="text" placeholder="Enter ESI number" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-salary-range">Salary Range *</label>
+            <input id="emp-salary-range" type="text" placeholder="e.g. ₹15,000 - ₹25,000" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-contractor">Contractor Name (Optional)</label>
+            <input id="emp-contractor" type="text" placeholder="Enter contractor name" />
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-4">
+        <div class="emp-section-title">Safety & EHS Linking</div>
+        <div class="emp-form-grid">
+          <div class="emp-check-grid">
+            <div class="emp-check-title">PPE Required</div>
+            <label class="emp-check-item"><input type="checkbox" value="Helmet" class="emp-ppe" /> Helmet</label>
+            <label class="emp-check-item"><input type="checkbox" value="Gloves" class="emp-ppe" /> Gloves</label>
+            <label class="emp-check-item"><input type="checkbox" value="Safety shoes" class="emp-ppe" /> Safety shoes</label>
+            <label class="emp-check-item"><input type="checkbox" value="Mask" class="emp-ppe" /> Mask</label>
+          </div>
+          <div class="emp-check-grid">
+            <div class="emp-check-title">Training Completed</div>
+            <label class="emp-check-item"><input type="checkbox" value="Safety training" class="emp-training" /> Safety training</label>
+            <label class="emp-check-item"><input type="checkbox" value="Machine training" class="emp-training" /> Machine training</label>
+          </div>
+          <div class="emp-form-field">
+            <label>Medical Fitness Status</label>
+            <span id="emp-medical-status" class="emp-readonly-chip pending">Pending</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-5">
+        <div class="emp-section-title">Documents</div>
+        <div class="emp-form-grid">
+          <div class="emp-form-field">
+            <label for="emp-doc-idproof">Aadhaar / ID Proof</label>
+            <input id="emp-doc-idproof" type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="updateMedicalFitnessStatus()" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-doc-pf">PF Registration Proof</label>
+            <input id="emp-doc-pf" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-doc-esi">ESI Card</label>
+            <input id="emp-doc-esi" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-doc-training">Training Certificates</label>
+            <input id="emp-doc-training" type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="updateMedicalFitnessStatus()" />
+          </div>
+          <div style="font-size:11px;color:var(--muted);">Allowed file types: PDF, JPG, PNG</div>
+        </div>
+      </section>
+    </form>
+  </div>
+  <div class="emp-drawer-footer">
+    <button type="button" class="btn btn-secondary" id="emp-back-btn" onclick="prevEmployeeStep()" style="display:none">Back</button>
+    <button type="button" class="btn btn-primary" id="emp-next-btn" onclick="nextEmployeeStep()">Next</button>
+    <button type="button" class="btn btn-primary" id="emp-submit-btn" onclick="submitAddEmployee(event)" style="display:none">Create Employee</button>
   </div>
 </div>
 
@@ -2549,6 +2834,166 @@ function submitCreateChecklist(event) {
   showToast('Checklist created successfully', 'success');
 }
 
+const EMPLOYEE_STEP_COUNT = 5;
+const employeeFormState = { step: 1 }; // Mirrors: const [step, setStep] = useState(1)
+
+function setEmployeeStep(nextStep) {
+  employeeFormState.step = Math.min(EMPLOYEE_STEP_COUNT, Math.max(1, nextStep));
+  updateEmployeeStepUI();
+}
+
+function generateEmployeeId() {
+  const maxId = DATA.people.reduce((max, person) => {
+    const parsed = parseInt(String(person.id || '').replace(/\D/g, ''), 10);
+    return Number.isFinite(parsed) ? Math.max(max, parsed) : max;
+  }, 1000);
+  return `EMP-${maxId + 1}`;
+}
+
+function openAddEmployeeDrawer() {
+  resetAddEmployeeForm();
+  document.getElementById('add-employee-overlay').classList.add('open');
+  document.getElementById('add-employee-drawer').classList.add('open');
+}
+
+function closeAddEmployeeDrawer() {
+  document.getElementById('add-employee-overlay').classList.remove('open');
+  document.getElementById('add-employee-drawer').classList.remove('open');
+}
+
+function resetAddEmployeeForm() {
+  const form = document.getElementById('add-employee-form');
+  if (form) form.reset();
+  const employeeIdField = document.getElementById('emp-id');
+  if (employeeIdField) employeeIdField.value = generateEmployeeId();
+  setEmployeeStep(1);
+  toggleComplianceFields();
+  updateMedicalFitnessStatus();
+}
+
+function toggleComplianceFields() {
+  const pfEnabled = document.getElementById('emp-pf-applicable').checked;
+  const esiEnabled = document.getElementById('emp-esi-applicable').checked;
+  document.getElementById('emp-pf-wrap').style.display = pfEnabled ? 'block' : 'none';
+  document.getElementById('emp-esi-wrap').style.display = esiEnabled ? 'block' : 'none';
+  if (!pfEnabled) document.getElementById('emp-pf-number').value = '';
+  if (!esiEnabled) document.getElementById('emp-esi-number').value = '';
+  updateEmployeeStepUI();
+}
+
+function updateMedicalFitnessStatus() {
+  const statusNode = document.getElementById('emp-medical-status');
+  if (!statusNode) return;
+  const hasMedicalDocument = Boolean(
+    document.getElementById('emp-doc-idproof')?.files?.length ||
+    document.getElementById('emp-doc-training')?.files?.length
+  );
+  statusNode.textContent = hasMedicalDocument ? 'Fit' : 'Pending';
+  statusNode.className = `emp-readonly-chip ${hasMedicalDocument ? 'fit' : 'pending'}`;
+}
+
+function isEmployeeStepValid(step = employeeFormState.step) {
+  if (step === 1) {
+    return Boolean(
+      document.getElementById('emp-full-name').value.trim() &&
+      document.getElementById('emp-id').value.trim() &&
+      document.getElementById('emp-phone').value.trim()
+    );
+  }
+  if (step === 2) {
+    return Boolean(
+      document.getElementById('emp-dept').value &&
+      document.getElementById('emp-role').value.trim() &&
+      document.getElementById('emp-joining-date').value
+    );
+  }
+  if (step === 3) {
+    const pfEnabled = document.getElementById('emp-pf-applicable').checked;
+    const esiEnabled = document.getElementById('emp-esi-applicable').checked;
+    if (!document.getElementById('emp-salary-range').value.trim()) return false;
+    if (pfEnabled && !document.getElementById('emp-pf-number').value.trim()) return false;
+    if (esiEnabled && !document.getElementById('emp-esi-number').value.trim()) return false;
+    return true;
+  }
+  return true;
+}
+
+function updateEmployeeStepUI() {
+  const step = employeeFormState.step;
+  for (let s = 1; s <= EMPLOYEE_STEP_COUNT; s++) {
+    document.getElementById(`emp-step-${s}`).classList.toggle('active', s === step);
+  }
+  document.getElementById('emp-step-label').textContent = `Step ${step} / ${EMPLOYEE_STEP_COUNT}`;
+  document.getElementById('emp-step-fill').style.width = `${(step / EMPLOYEE_STEP_COUNT) * 100}%`;
+  document.getElementById('emp-back-btn').style.display = step === 1 ? 'none' : 'inline-flex';
+  document.getElementById('emp-next-btn').style.display = step === EMPLOYEE_STEP_COUNT ? 'none' : 'inline-flex';
+  document.getElementById('emp-submit-btn').style.display = step === EMPLOYEE_STEP_COUNT ? 'inline-flex' : 'none';
+  document.getElementById('emp-next-btn').disabled = !isEmployeeStepValid(step);
+}
+
+function nextEmployeeStep() {
+  if (!isEmployeeStepValid(employeeFormState.step)) {
+    showToast('Please complete required fields before continuing', 'warning');
+    return;
+  }
+  setEmployeeStep(employeeFormState.step + 1);
+}
+
+function prevEmployeeStep() {
+  setEmployeeStep(employeeFormState.step - 1);
+}
+
+function getSelectedValues(selector) {
+  return [...document.querySelectorAll(selector)]
+    .filter((node) => node.checked)
+    .map((node) => node.value);
+}
+
+function submitAddEmployee(event) {
+  if (event) event.preventDefault();
+  if (!isEmployeeStepValid(1) || !isEmployeeStepValid(2) || !isEmployeeStepValid(3)) {
+    showToast('Please complete required fields before creating employee', 'warning');
+    return;
+  }
+
+  const payload = {
+    basicDetails: {
+      fullName: document.getElementById('emp-full-name').value.trim(),
+      employeeId: document.getElementById('emp-id').value.trim(),
+      phoneNumber: document.getElementById('emp-phone').value.trim(),
+      email: document.getElementById('emp-email').value.trim(),
+    },
+    workDetails: {
+      department: document.getElementById('emp-dept').value,
+      role: document.getElementById('emp-role').value.trim(),
+      joiningDate: document.getElementById('emp-joining-date').value,
+    },
+    compliance: {
+      pfApplicable: document.getElementById('emp-pf-applicable').checked,
+      pfNumber: document.getElementById('emp-pf-number').value.trim(),
+      esiApplicable: document.getElementById('emp-esi-applicable').checked,
+      esiNumber: document.getElementById('emp-esi-number').value.trim(),
+      salaryRange: document.getElementById('emp-salary-range').value.trim(),
+      contractorName: document.getElementById('emp-contractor').value.trim(),
+    },
+    safety: {
+      ppeRequired: getSelectedValues('.emp-ppe'),
+      trainingCompleted: getSelectedValues('.emp-training'),
+      medicalFitnessStatus: document.getElementById('emp-medical-status').textContent,
+    },
+    documents: {
+      idProof: document.getElementById('emp-doc-idproof').files?.[0]?.name || '',
+      pfRegistrationProof: document.getElementById('emp-doc-pf').files?.[0]?.name || '',
+      esiCard: document.getElementById('emp-doc-esi').files?.[0]?.name || '',
+      trainingCertificates: document.getElementById('emp-doc-training').files?.[0]?.name || '',
+    },
+  };
+
+  console.log('Employee created payload:', payload);
+  closeAddEmployeeDrawer();
+  showToast('Employee created successfully', 'success');
+}
+
 function openAudit(id) {
   const a = DATA.audits.find(x => x.id === id);
   if (!a) return;
@@ -2832,7 +3277,7 @@ function people() {
         <div class="page-title">People & Training</div>
         <div class="page-sub">${DATA.people.length} employees · PF/ESI tracking enabled</div>
       </div>
-      <button class="btn btn-primary" onclick="showToast('Add employee form — coming soon','info')">+ Add employee</button>
+      <button class="btn btn-primary" onclick="openAddEmployeeDrawer()">+ Add employee</button>
     </div>
 
     <div class="people-tabs">
@@ -3129,6 +3574,13 @@ function globalSearch(q) {
 // (modal auto-triggers, dashboard shown after completion)
 document.getElementById('new-freq').addEventListener('change', updateCustomFrequencyFields);
 resetCreateChecklistForm();
+
+const addEmployeeFormNode = document.getElementById('add-employee-form');
+if (addEmployeeFormNode) {
+  addEmployeeFormNode.addEventListener('input', updateEmployeeStepUI);
+  addEmployeeFormNode.addEventListener('change', updateEmployeeStepUI);
+}
+resetAddEmployeeForm();
 </script>
 </body>
 </html>
