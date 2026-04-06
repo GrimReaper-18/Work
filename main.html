@@ -1562,9 +1562,92 @@ body.page-exit {
 .empty-icon  { font-size: 48px; margin-bottom: 14px; opacity: 0.4; }
 .empty-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--charcoal); margin-bottom: 8px; }
 .empty-text  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* Auth screen */
+#auth-screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at top right, rgba(198,172,143,0.18), transparent 48%),
+    var(--surface);
+  z-index: 1200;
+  padding: 24px;
+}
+#auth-screen.active { display: flex; }
+.auth-card {
+  width: min(420px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-md);
+  padding: 28px;
+}
+.auth-logo {
+  font-family: var(--font-d);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--charcoal);
+}
+.auth-logo span { color: var(--orange-d); }
+.auth-sub {
+  margin: 6px 0 20px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.auth-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+}
+.auth-field input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--charcoal);
+  font-family: var(--font-b);
+}
+.auth-error {
+  min-height: 20px;
+  margin-bottom: 8px;
+  color: var(--red-l);
+  font-size: 12px;
+}
+
+#sidebar,
+#main {
+  display: none;
+}
 </style>
 </head>
 <body>
+
+<div id="auth-screen">
+  <form class="auth-card" id="login-form">
+    <div class="auth-logo">COMPLI<span>OS</span></div>
+    <div class="auth-sub">Sign in to continue to your compliance workspace.</div>
+    <div class="auth-field">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" placeholder="Enter email" autocomplete="email" required />
+    </div>
+    <div class="auth-field">
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" placeholder="Enter password" autocomplete="current-password" required />
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <button class="btn btn-primary" type="submit" style="width:100%">Login</button>
+  </form>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════
      ONBOARDING MODAL
@@ -2071,11 +2154,12 @@ body.page-exit {
 <script type="module" src="./firebase.js"></script>
 <script>
 function handleLogout() {
-  if (document.body.classList.contains('page-exit')) return;
-  document.body.classList.add('page-exit');
-  setTimeout(() => {
-    window.location.replace('index.html');
-  }, 280);
+  const sdk = window.firebaseServices;
+  if (!sdk) return;
+  sdk.signOut(sdk.auth).catch((error) => {
+    console.error('Logout failed:', error);
+    showToast('Unable to sign out', 'error');
+  });
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -2183,6 +2267,8 @@ const DEFAULT_PEOPLE = DATA.people.map((person) => ({ ...person, trainings: Arra
 
 let firebaseReady = false;
 let currentUserId = null;
+let firebaseSyncStarted = false;
+let authObserverBound = false;
 const unsubscribeHandlers = [];
 
 function toTaskStatus(status) {
@@ -2321,33 +2407,68 @@ function setAudits(updater) {
   });
 }
 
-async function ensureSignedIn() {
+function toggleAuthView(isLoggedIn) {
+  const authScreen = document.getElementById('auth-screen');
+  const sidebar = document.getElementById('sidebar');
+  const main = document.getElementById('main');
+  const onboardModal = document.getElementById('onboard-modal');
+  if (authScreen) authScreen.classList.toggle('active', !isLoggedIn);
+  if (sidebar) sidebar.style.display = isLoggedIn ? 'flex' : 'none';
+  if (main) main.style.display = isLoggedIn ? 'flex' : 'none';
+  if (onboardModal && !isLoggedIn) onboardModal.style.display = 'none';
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
   const sdk = window.firebaseServices;
   if (!sdk) return;
-  if (sdk.auth.currentUser) {
-    currentUserId = sdk.auth.currentUser.uid;
-    return;
-  }
-
-  const email = window.prompt('Firebase login email:');
-  const password = window.prompt('Firebase login password:');
+  const email = document.getElementById('login-email')?.value.trim();
+  const password = document.getElementById('login-password')?.value;
+  const errorNode = document.getElementById('auth-error');
+  if (errorNode) errorNode.textContent = '';
   if (!email || !password) {
-    showToast('Login is required to sync cloud data', 'warning');
+    if (errorNode) errorNode.textContent = 'Email and password are required.';
     return;
   }
-
-  await sdk.signInWithEmailAndPassword(sdk.auth, email, password);
-  currentUserId = sdk.auth.currentUser?.uid || null;
+  try {
+    await sdk.signInWithEmailAndPassword(sdk.auth, email, password);
+  } catch (error) {
+    console.error('Login failed:', error);
+    if (errorNode) errorNode.textContent = 'Login failed. Check your credentials and try again.';
+  }
 }
 
 async function initializeFirebaseSync() {
   while (!window.firebaseServices) {
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  try {
-    await ensureSignedIn();
-    if (!currentUserId) return;
+  toggleAuthView(false);
 
+  if (authObserverBound) return;
+  authObserverBound = true;
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
+
+  const sdk = window.firebaseServices;
+  sdk.onAuthStateChanged(sdk.auth, async (user) => {
+    if (!user) {
+      while (unsubscribeHandlers.length) {
+        const unsubscribe = unsubscribeHandlers.pop();
+        if (typeof unsubscribe === 'function') unsubscribe();
+      }
+      firebaseReady = false;
+      firebaseSyncStarted = false;
+      currentUserId = null;
+      toggleAuthView(false);
+      return;
+    }
+
+    currentUserId = user.uid;
+    toggleAuthView(true);
+    if (firebaseSyncStarted) return;
+    firebaseSyncStarted = true;
+
+  try {
     await seedCollectionIfEmpty('employees', DEFAULT_PEOPLE);
     await seedCollectionIfEmpty('checklists', DEFAULT_AUDITS);
     await seedCollectionIfEmpty('tasks', DEFAULT_ACTIONS.map(normalizeTask));
@@ -2370,6 +2491,7 @@ async function initializeFirebaseSync() {
     console.error('Firebase initialization failed:', error);
     showToast('Firebase login/sync failed', 'error');
   }
+  });
 }
 
 DATA.actions = DEFAULT_ACTIONS.map(normalizeTask);
