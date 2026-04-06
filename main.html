@@ -13,7 +13,3593 @@
 ───────────────────────────────────────────────────────────────────── */
 :root {
   --navy:        #22333B;
+  --navy-mid:    #5E503F<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CompliOS — Factory Compliance OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ─────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────────────────────────────── */
+:root {
+  --navy:        #22333B;
   --navy-mid:    #5E503F;
+  --navy-light:  #C6AC8F;
+  --teal:        #5E503F;
+  --orange:      #C6AC8F;
+  --orange-d:    #5E503F;
+  --orange-l:    #EAE0D5;
+  --green:       #5E503F;
+  --green-d:     #22333B;
+  --green-l:     #C6AC8F;
+  --red:         #0A0908;
+  --red-l:       #5E503F;
+  --amber:       #C6AC8F;
+  --amber-l:     #EAE0D5;
+  --surface:     #EAE0D5;
+  --surface-2:   #F3ECE4;
+  --white:       #FFFFFF;
+  --charcoal:    #0A0908;
+  --slate:       #22333B;
+  --muted:       #5E503F;
+  --muted-l:     #8B7B67;
+  --border:      #D8CAB9;
+  --border-d:    #C6AC8F;
+
+  --font-d: 'Syne', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'DM Mono', monospace;
+
+  --sidebar-w: 240px;
+  --topbar-h:  60px;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --space-sm:  12px;
+  --space-md:  20px;
+  --space-lg:  32px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font-b);
+  color: var(--charcoal);
+  background: var(--surface);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: opacity 320ms ease, transform 320ms ease, filter 320ms ease;
+}
+
+body.page-exit {
+  opacity: 0;
+  transform: scale(0.992);
+  filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: opacity 120ms linear;
+  }
+
+  body.page-exit {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────────────────────────────────── */
+@keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes spin     { to { transform:rotate(360deg); } }
+@keyframes slideIn  { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+@keyframes barFill  { from { width:0; } to { width:var(--target-w, 100%); } }
+@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+@keyframes blink    { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+.fade-up  { animation: fadeUp 0.4s ease both; }
+.fade-in  { animation: fadeIn 0.3s ease both; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 50;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.25);
+}
+#sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+.sidebar-logo {
+  padding: 0 20px;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.logo-text {
+  font-family: var(--font-d);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 0.04em;
+}
+.logo-text span { color: var(--orange); }
+.logo-sub {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.sidebar-plant {
+  margin: 14px 14px 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.plant-label {
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 3px;
+}
+.plant-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plant-name .dot-live {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green-l);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+.nav-section-label {
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.25);
+  padding: 10px 10px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+  position: relative;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); }
+.nav-item.active { background: rgba(198,172,143,0.25); }
+.nav-item.active .nav-label { color: var(--orange-l); }
+.nav-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  flex: 1;
+}
+.nav-badge {
+  font-family: var(--font-m);
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.badge-red   { background: rgba(10,9,8,0.18); color: #5E503F; }
+.badge-amber { background: rgba(198,172,143,0.30); color: #5E503F; }
+.badge-green { background: rgba(94,80,63,0.20);  color: #EAE0D5; }
+
+.sidebar-user {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.user-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange), var(--orange-d));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  flex-shrink: 0;
+}
+.user-details {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.user-name  {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-role  {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  font-family: var(--font-m);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.signout-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(198,172,143,0.62);
+  background: rgba(198,172,143,0.12);
+  color: var(--orange-l);
+  border-radius: 10px;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.signout-btn:hover {
+  background: rgba(198,172,143,0.25);
+  border-color: rgba(234,224,213,0.72);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+.signout-btn:active {
+  transform: translateY(0);
+}
+.signout-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   MAIN AREA
+───────────────────────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* TOP BAR */
+#topbar {
+  height: var(--topbar-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  gap: var(--space-md);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+.topbar-title {
+  font-family: var(--font-d);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--charcoal);
+  flex: 1;
+}
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  width: 260px;
+}
+.topbar-search input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-b);
+  font-size: 13px;
+  color: var(--charcoal);
+  width: 100%;
+}
+.topbar-search input::placeholder { color: var(--muted-l); }
+.topbar-icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s;
+  position: relative;
+}
+.topbar-icon-btn:hover { background: var(--surface-2); }
+.topbar-icon-btn .ui-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.topbar-icon-btn .ui-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.notif-dot {
+  position: absolute;
+  top: 6px; right: 7px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--red-l);
+  border: 1.5px solid var(--white);
+}
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--orange);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.topbar-btn:hover { background: var(--orange-d); }
+
+/* CONTENT */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SHARED COMPONENTS
+───────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-family: var(--font-d);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 4px;
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-family: var(--font-m);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.badge-ok       { background: rgba(94,80,63,0.12);  color: var(--green-d);  border: 1px solid rgba(94,80,63,0.25); }
+.badge-due      { background: rgba(198,172,143,0.18);  color: var(--amber);    border: 1px solid rgba(198,172,143,0.28); }
+.badge-overdue  { background: rgba(10,9,8,0.10);  color: var(--red);      border: 1px solid rgba(10,9,8,0.22); }
+.badge-info     { background: rgba(34,51,59,0.08);   color: var(--navy-mid); border: 1px solid rgba(34,51,59,0.16); }
+.badge-pending  { background: rgba(94,80,63,0.10);color: var(--muted);    border: 1px solid rgba(94,80,63,0.20); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--orange); color: var(--white); }
+.btn-primary:hover { background: var(--orange-d); }
+.btn-secondary { background: var(--surface); color: var(--charcoal); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-navy { background: var(--navy); color: var(--white); }
+.btn-navy:hover { background: var(--navy-mid); }
+.btn-ghost { background: transparent; color: var(--muted); padding: 6px 10px; }
+.btn-ghost:hover { background: var(--surface); color: var(--charcoal); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-danger { background: rgba(10,9,8,0.08); color: var(--red); border: 1px solid rgba(10,9,8,0.22); }
+.btn-danger:hover { background: rgba(10,9,8,0.16); }
+
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-lg);
+}
+.page-title { font-family: var(--font-d); font-size: 22px; font-weight: 800; color: var(--charcoal); }
+.page-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-family: var(--font-m);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+.data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--slate);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(234,224,213,0.8); cursor: pointer; }
+.data-table .cell-primary { font-weight: 600; color: var(--charcoal); }
+.data-table .cell-mono    { font-family: var(--font-m); font-size: 11px; }
+.data-table .cell-muted   { color: var(--muted); font-size: 12px; }
+
+/* KPI TILES */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+  margin-bottom: var(--space-lg);
+}
+.kpi-tile {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-tile::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.kpi-tile.ok::after    { background: linear-gradient(90deg, var(--green), var(--green-l)); }
+.kpi-tile.warn::after  { background: linear-gradient(90deg, var(--amber), var(--amber-l)); }
+.kpi-tile.danger::after{ background: linear-gradient(90deg, var(--red), var(--red-l)); }
+.kpi-tile.navy::after  { background: linear-gradient(90deg, var(--navy), var(--navy-light)); }
+.kpi-tile.info::after  { background: linear-gradient(90deg, var(--orange), var(--orange-l)); }
+
+.kpi-icon { width: 26px; height: 26px; margin-bottom: 10px; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.kpi-icon svg { width: 100%; height: 100%; display: block; }
+.search-icon { width: 20px; height: 20px; color: var(--charcoal); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.search-icon svg { width: 100%; height: 100%; display: block; }
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.btn-icon.navy { color: var(--navy); }
+.btn-icon.light { color: var(--surface); }
+.kpi-num {
+  font-family: var(--font-d);
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-tile.ok    .kpi-num { color: var(--green-d); }
+.kpi-tile.warn  .kpi-num { color: var(--amber); }
+.kpi-tile.danger.kpi-num { color: var(--red); }
+.kpi-tile.danger .kpi-num { color: var(--red); }
+.kpi-tile.navy  .kpi-num { color: var(--navy-mid); }
+.kpi-tile.info  .kpi-num { color: var(--orange-d); }
+.kpi-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.kpi-sub   { font-size: 11px; color: var(--muted-l); margin-top: 2px; font-family: var(--font-m); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   DRAWER
+───────────────────────────────────────────────────────────────────── */
+#drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(34,51,59,0.45);
+  z-index: 200;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+#drawer-overlay.open { display: block; }
+#drawer {
+  position: fixed;
+  top: 0; right: 0;
+  width: 480px;
+  height: 100vh;
+  background: var(--white);
+  z-index: 201;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+#drawer.open { transform: translateX(0); }
+.drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+.drawer-title { font-family: var(--font-d); font-size: 17px; font-weight: 700; color: var(--charcoal); }
+.drawer-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.drawer-close {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.drawer-close:hover { background: var(--surface-2); color: var(--charcoal); }
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+.drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Detail sections */
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-label { font-family: var(--font-m); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.detail-val   { font-size: 13px; font-weight: 600; color: var(--charcoal); text-align: right; }
+
+.history-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+.history-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.history-date { font-family: var(--font-m); font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.history-text { font-size: 13px; color: var(--slate); }
+
+/* TOAST */
+#toast-container {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--charcoal);
+  color: var(--white);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: all;
+  min-width: 280px;
+}
+.toast.success { border-left: 4px solid var(--green-l); }
+.toast.warning { border-left: 4px solid var(--amber-l); }
+.toast.error   { border-left: 4px solid var(--red-l); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   PROGRESS BAR
+───────────────────────────────────────────────────────────────────── */
+.prog-bar {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 3px;
+  animation: barFill 1s ease both;
+}
+.prog-fill.green  { background: linear-gradient(90deg, var(--green), var(--green-l)); }
+.prog-fill.amber  { background: linear-gradient(90deg, var(--amber), var(--amber-l)); }
+.prog-fill.red    { background: linear-gradient(90deg, var(--red), var(--red-l)); }
+.prog-fill.orange { background: linear-gradient(90deg, var(--orange-d), var(--orange)); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   DASHBOARD PAGE
+───────────────────────────────────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 14px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.cal-day:hover { background: var(--surface-2); }
+.cal-day.today { background: var(--navy); color: var(--white); font-weight: 700; }
+.cal-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+}
+.cal-day.event-red::after   { background: var(--red-l); }
+.cal-day.event-amber::after { background: var(--amber-l); }
+.cal-day.event-green::after { background: var(--green-l); }
+.cal-day.past { color: var(--muted-l); }
+.cal-header   { font-family: var(--font-m); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); text-align: center; }
+
+.overdue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+.overdue-item:hover { border-color: var(--orange); box-shadow: var(--shadow-sm); }
+.overdue-item.critical { border-left: 4px solid var(--red-l); }
+.overdue-item.warning  { border-left: 4px solid var(--amber-l); }
+.overdue-icon { font-size: 20px; flex-shrink: 0; }
+.overdue-title { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.overdue-meta  { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-top: 2px; }
+.overdue-cta   { margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   REGISTER PAGE
+───────────────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip:hover     { border-color: var(--navy-light); color: var(--navy-mid); }
+.filter-chip.active    { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.filter-chip.orange.active { background: var(--orange); border-color: var(--orange); }
+.filter-chip.green.active  { background: var(--green-d); border-color: var(--green-d); }
+.filter-chip.red.active    { background: var(--red); border-color: var(--red); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   AUDITS PAGE
+───────────────────────────────────────────────────────────────────── */
+.audit-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.audit-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.audit-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--orange); }
+.audit-card-type {
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--orange);
+  margin-bottom: 8px;
+}
+.audit-card-title { font-family: var(--font-d); font-size: 15px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
+.audit-card-meta  { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.audit-card-footer { display: flex; justify-content: space-between; align-items: center; }
+
+/* CHECKLIST MODAL */
+#checklist-modal,
+#create-checklist-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(34,51,59,0.5);
+  backdrop-filter: blur(3px);
+  align-items: center;
+  justify-content: center;
+}
+#checklist-modal.open,
+#create-checklist-modal.open { display: flex; }
+.modal-box {
+  background: var(--white);
+  border-radius: 20px;
+  width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.3s ease both;
+}
+.modal-header {
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+.modal-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--charcoal); }
+.modal-sub   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.modal-body  { flex: 1; overflow-y: auto; padding: 20px 26px; }
+.modal-footer {
+  padding: 16px 26px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.checklist-section { margin-bottom: 20px; }
+.checklist-section-title {
+  font-family: var(--font-d);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy-mid);
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: rgba(34,51,59,0.06);
+  border-radius: 8px;
+  border-left: 3px solid var(--navy);
+}
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+.checklist-question { font-size: 13px; color: var(--slate); flex: 1; line-height: 1.5; }
+.checklist-actions  { display: flex; gap: 6px; flex-shrink: 0; }
+.check-btn {
+  width: 36px; height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.check-btn:hover    { border-color: var(--navy); }
+.check-btn.yes.sel  { background: var(--green); border-color: var(--green); color: var(--white); }
+.check-btn.no.sel   { background: var(--red);   border-color: var(--red);   color: var(--white); }
+.check-btn.na.sel   { background: var(--muted); border-color: var(--muted); color: var(--white); }
+.checklist-step-indicator {
+  margin-bottom: 14px;
+}
+.checklist-step-tabs {
+  display: flex;
+  gap: 8px;
+}
+.checklist-step-tab {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 12px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.checklist-step-tab.active {
+  background: rgba(198,172,143,0.22);
+  border-color: var(--orange);
+  color: var(--charcoal);
+}
+.checklist-step {
+  display: none;
+  animation: fadeUp 0.25s ease both;
+}
+.checklist-step.active { display: block; }
+.evidence-grid {
+  display: grid;
+  gap: 14px;
+}
+.evidence-field {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-2);
+}
+.evidence-field h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--charcoal);
+}
+.evidence-field p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.evidence-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--slate);
+}
+.file-meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* CREATE CHECKLIST MODAL */
+.create-step-indicator {
+  margin-bottom: 18px;
+}
+.create-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.create-step-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.create-step-fill {
+  height: 100%;
+  width: 33.333%;
+  background: var(--orange);
+  transition: width 0.2s ease;
+}
+.create-step {
+  display: none;
+}
+.create-step.active {
+  display: block;
+}
+.create-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.form-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.form-field input,
+.form-field select {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--charcoal);
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+}
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--navy-light);
+  box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
+}
+.form-field.full { grid-column: 1 / -1; }
+
+/* ADD EMPLOYEE DRAWER */
+#add-employee-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(34,51,59,0.45);
+  backdrop-filter: blur(2px);
+  display: none;
+  z-index: 220;
+}
+#add-employee-overlay.open { display: block; }
+#add-employee-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(92vw, 460px);
+  height: 100vh;
+  background: var(--white);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 221;
+  display: flex;
+  flex-direction: column;
+}
+#add-employee-drawer.open { transform: translateX(0); }
+.emp-step-indicator { margin-bottom: 16px; }
+.emp-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.emp-step-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.emp-step-fill {
+  height: 100%;
+  background: var(--orange);
+  transition: width .22s ease;
+}
+.emp-step {
+  display: none;
+  animation: fadeUp .25s ease both;
+}
+.emp-step.active { display: block; }
+.emp-section-title {
+  font-family: var(--font-d);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+}
+.emp-form-grid {
+  display: grid;
+  gap: 14px;
+}
+.emp-form-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.emp-form-field input,
+.emp-form-field select {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--charcoal);
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+}
+.emp-form-field input[type="file"] {
+  height: auto;
+  padding: 9px 10px;
+}
+.emp-form-field input:focus,
+.emp-form-field select:focus {
+  border-color: var(--navy-light);
+  box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
+}
+.emp-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--slate);
+}
+.emp-check-grid {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px;
+}
+.emp-check-title {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.emp-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--charcoal);
+}
+.emp-check-item input { accent-color: var(--orange-d); }
+.emp-readonly-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.emp-readonly-chip.pending { background: rgba(198,172,143,0.24); color: var(--orange-d); }
+.emp-readonly-chip.fit { background: rgba(94,80,63,0.16); color: var(--green-d); }
+.emp-drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.step-section-title {
+  font-family: var(--font-d);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+}
+.sub-section {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px;
+}
+.sub-section + .sub-section {
+  margin-top: 10px;
+}
+.sub-heading {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy-mid);
+  margin-bottom: 10px;
+}
+.info-box {
+  margin-top: 14px;
+  background: rgba(198,172,143,0.28);
+  border: 1px solid var(--border-d);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--slate);
+}
+.assignment-message {
+  margin-top: 6px;
+  font-size: 12px;
+}
+.assignment-message.success { color: #1f6d42; }
+.assignment-message.warning { color: #915f00; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   ACTIONS PAGE
+───────────────────────────────────────────────────────────────────── */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.kanban-col { background: var(--surface); border-radius: var(--radius-lg); padding: 14px; }
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.kanban-col-title { font-size: 13px; font-weight: 700; color: var(--charcoal); }
+.kanban-count {
+  font-family: var(--font-m);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+.action-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.action-card:hover { box-shadow: var(--shadow-md); border-color: var(--orange); }
+.action-card.high  { border-left: 3px solid var(--red-l); }
+.action-card.med   { border-left: 3px solid var(--amber-l); }
+.action-card.low   { border-left: 3px solid var(--green-l); }
+.action-title  { font-size: 13px; font-weight: 600; color: var(--charcoal); margin-bottom: 6px; line-height: 1.4; }
+.action-linked { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-bottom: 8px; }
+.action-footer { display: flex; align-items: center; gap: 8px; }
+.action-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.action-due { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   PEOPLE PAGE
+───────────────────────────────────────────────────────────────────── */
+.people-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 4px;
+  width: fit-content;
+}
+.people-tab {
+  padding: 7px 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--muted);
+}
+.people-tab.active { background: var(--white); color: var(--charcoal); box-shadow: var(--shadow-sm); font-weight: 600; }
+
+/* Training matrix */
+.matrix-scroll { overflow-x: auto; }
+.matrix-table { min-width: 700px; border-collapse: collapse; width: 100%; }
+.matrix-table th {
+  padding: 10px 8px;
+  font-family: var(--font-m);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.matrix-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+.matrix-cell {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin: 0 auto;
+}
+.mc-done  { background: rgba(94,80,63,0.12); }
+.mc-miss  { background: rgba(10,9,8,0.10); }
+.mc-na    { background: var(--surface-2); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   DOCUMENTS PAGE
+───────────────────────────────────────────────────────────────────── */
+.doc-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.doc-tree { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.doc-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--surface-2);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--slate);
+  transition: background 0.15s;
+}
+.doc-tree-item:hover   { background: var(--surface); }
+.doc-tree-item.active  { background: rgba(198,172,143,0.14); color: var(--orange-d); font-weight: 600; }
+.doc-tree-item.sub     { padding-left: 36px; font-size: 12px; }
+.doc-tree-item:last-child { border-bottom: none; }
+.doc-list { display: flex; flex-direction: column; gap: 10px; }
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.doc-item:hover { box-shadow: var(--shadow-sm); border-color: var(--navy-light); }
+.doc-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.doc-name { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.doc-meta { font-size: 11px; color: var(--muted); font-family: var(--font-m); margin-top: 2px; }
+.doc-actions { margin-left: auto; display: flex; gap: 6px; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   ONBOARDING MODAL
+───────────────────────────────────────────────────────────────────── */
+#onboard-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--teal) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.onboard-box {
+  background: var(--white);
+  border-radius: 24px;
+  width: 520px;
+  padding: 40px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.5s ease both;
+}
+.onboard-logo {
+  font-family: var(--font-d);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.onboard-logo span { color: var(--orange); }
+#ob-icon {
+  width: 78px;
+  height: 78px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+}
+#ob-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.onboard-step { display: none; }
+.onboard-step.active { display: block; }
+.onboard-h { font-family: var(--font-d); font-size: 20px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
+.onboard-p { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.option-btn {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--white);
+  text-align: left;
+}
+.option-btn:hover   { border-color: var(--orange); }
+.option-btn.sel     { border-color: var(--orange); background: rgba(198,172,143,0.12); }
+.option-icon  { font-size: 22px; margin-bottom: 6px; }
+.option-label { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.option-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.onboard-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  color: var(--charcoal);
+  outline: none;
+  margin-bottom: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.onboard-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(198,172,143,0.2); }
+.progress-steps {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+.prog-step {
+  width: 32px; height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  transition: background 0.3s;
+}
+.prog-step.done { background: var(--orange); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   NOTIFICATION PANEL
+───────────────────────────────────────────────────────────────────── */
+#notif-panel {
+  position: fixed;
+  top: 70px; right: 16px;
+  width: 340px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 150;
+  display: none;
+  animation: fadeUp 0.25s ease both;
+  overflow: hidden;
+}
+#notif-panel.open { display: block; }
+.notif-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notif-title { font-family: var(--font-d); font-size: 14px; font-weight: 700; color: var(--charcoal); }
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--surface-2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.notif-item:hover { background: var(--surface); }
+.notif-item:last-child { border-bottom: none; }
+.notif-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.notif-text { font-size: 12px; color: var(--slate); line-height: 1.5; }
+.notif-time { font-family: var(--font-m); font-size: 10px; color: var(--muted-l); margin-top: 3px; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   UPLOAD ZONE
+───────────────────────────────────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+}
+.upload-zone:hover { border-color: var(--orange); background: rgba(198,172,143,0.08); }
+.upload-zone-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-zone-text { font-size: 13px; color: var(--muted); }
+.upload-zone-text strong { color: var(--orange); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   SCROLLBAR STYLING
+───────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-d); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   TOOLTIP
+───────────────────────────────────────────────────────────────────── */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--charcoal);
+  color: var(--white);
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 999;
+}
+[data-tip]:hover::after { opacity: 1; }
+
+/* Section toggle */
+.section-toggle { display: none; }
+.section-toggle.show { display: block; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 24px; }
+.empty-icon  { font-size: 48px; margin-bottom: 14px; opacity: 0.4; }
+.empty-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--charcoal); margin-bottom: 8px; }
+.empty-text  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ONBOARDING MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="onboard-modal">
+  <div class="onboard-box">
+    <div class="onboard-logo">COMPLI<span>OS</span></div>
+    <div class="progress-steps">
+      <div class="prog-step done" id="ps1"></div>
+      <div class="prog-step" id="ps2"></div>
+      <div class="prog-step" id="ps3"></div>
+    </div>
+
+    <!-- Step 1: Location -->
+    <div class="onboard-step active" id="os1">
+      <div class="onboard-h">Where is your plant?</div>
+      <div class="onboard-p">Location determines which state-specific rules apply — MPCB, Maharashtra Factories Rules, DISH, etc.</div>
+      <input class="onboard-input" type="text" placeholder="Plant name (e.g. Ranjan Engineering Pvt Ltd)" id="inp-plant"/>
+      <input class="onboard-input" type="text" placeholder="Location (e.g. Chakan MIDC, Pune)" id="inp-location" value="Chakan MIDC, Pune"/>
+      <input class="onboard-input" type="text" placeholder="State (e.g. Maharashtra)" id="inp-state" value="Maharashtra"/>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(2)">Continue →</button>
+    </div>
+
+    <!-- Step 2: Workers -->
+    <div class="onboard-step" id="os2">
+      <div class="onboard-h">Tell us about your workforce</div>
+      <div class="onboard-p">This helps us set up PF/ESI tracking, shift registers and labour compliance correctly.</div>
+      <input class="onboard-input" type="number" placeholder="Number of workers (e.g. 150)" id="inp-workers" value="150"/>
+      <input class="onboard-input" type="number" placeholder="Number of shifts (1, 2 or 3)" id="inp-shifts" value="2"/>
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" checked id="cb-pf" style="width:14px;height:14px;accent-color:var(--orange)"/> PF applicable
+        </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" checked id="cb-esi" style="width:14px;height:14px;accent-color:var(--orange)"/> ESI applicable
+        </label>
+      </div>
+      <input class="onboard-input" type="text" placeholder="Main OEM customers (e.g. Bajaj, VW, Tata)" id="inp-oem" value="Bajaj Auto, VW Group"/>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(3)">Continue →</button>
+    </div>
+
+    <!-- Step 3: Loading -->
+    <div class="onboard-step" id="os3">
+      <div style="text-align:center;padding:20px 0">
+        <div id="ob-icon" aria-hidden="true"></div>
+        <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
+        <div class="onboard-p" id="ob-sub">Configuring 33 obligations · Maharashtra</div>
+        <div class="prog-bar" style="margin:24px 0">
+          <div class="prog-fill orange" id="ob-progress" style="width:0;transition:width 0.4s ease"></div>
+        </div>
+        <div id="ob-items" style="font-family:var(--font-m);font-size:11px;color:var(--muted);text-align:left;max-width:320px;margin:0 auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     NOTIFICATIONS PANEL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="notif-panel">
+  <div class="notif-header">
+    <div class="notif-title">🔔 Notifications</div>
+    <span class="btn btn-ghost btn-sm" onclick="toggleNotif()">✕</span>
+  </div>
+  <div class="notif-item" onclick="showRegisterDetail('mpcb')">
+    <div class="notif-dot" style="background:var(--red-l)"></div>
+    <div>
+      <div class="notif-text"><strong>MPCB Consent overdue</strong> — Air/Water consent expired 3 days ago. Renew immediately.</div>
+      <div class="notif-time">3 days ago</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--amber-l)"></div>
+    <div>
+      <div class="notif-text"><strong>PF challan due in 5 days</strong> — March 2026 PF contribution due by 15th.</div>
+      <div class="notif-time">Today, 09:00 AM</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--amber-l)"></div>
+    <div>
+      <div class="notif-text"><strong>Fire NOC expiring in 18 days</strong> — Building B Fire NOC renewal required.</div>
+      <div class="notif-time">Yesterday, 08:30 AM</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--green-l)"></div>
+    <div>
+      <div class="notif-text"><strong>Foundry safety audit completed</strong> — Manoj T. submitted monthly audit. 2 NCs found.</div>
+      <div class="notif-time">2 days ago</div>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot" style="background:var(--navy-light)"></div>
+    <div>
+      <div class="notif-text"><strong>Bajaj audit scheduled</strong> — OEM audit in 12 days. 4 open actions remain.</div>
+      <div class="notif-time">3 days ago</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     DRAWER
+═══════════════════════════════════════════════════════════════════ -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title" id="drawer-title">Item Detail</div>
+      <div class="drawer-sub" id="drawer-sub"></div>
+    </div>
+    <div class="drawer-close" onclick="closeDrawer()">×</div>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer" id="drawer-footer"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CHECKLIST MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="checklist-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Foundry Safety Audit</div>
+        <div class="modal-sub" id="modal-sub">Monthly · Chakan MIDC Plant · March 2026</div>
+      </div>
+      <div class="drawer-close" onclick="closeModal()">×</div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <div id="modal-score" style="font-family:var(--font-m);font-size:12px;color:var(--muted)">0 / 0 answered</div>
+      <div style="display:flex;gap:10px" id="modal-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CREATE CHECKLIST MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div id="create-checklist-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Create Checklist</div>
+        <div class="modal-sub">Configure a new checklist in 3 steps</div>
+      </div>
+      <div class="drawer-close" onclick="closeCreateChecklist()">×</div>
+    </div>
+    <form onsubmit="submitCreateChecklist(event)">
+      <div class="modal-body">
+        <div class="create-step-indicator">
+          <div class="create-step-label" id="create-step-label">Step 1 / 3</div>
+          <div class="create-step-track"><div class="create-step-fill" id="create-step-fill"></div></div>
+        </div>
+
+        <div class="create-step active" id="create-step-1">
+          <div class="step-section-title">Basic Info</div>
+          <div class="create-form-grid">
+            <div class="form-field full">
+              <label for="new-title">Checklist Name</label>
+              <input id="new-title" placeholder="Enter checklist name" />
+            </div>
+            <div class="form-field">
+              <label for="new-type">Category</label>
+              <select id="new-type">
+                <option value="">Select category</option>
+                <option>Safety / EHS</option>
+                <option>Statutory</option>
+                <option>OEM</option>
+                <option>Internal</option>
+                <option>PPE</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="new-location">Location / Plant</label>
+              <select id="new-location">
+                <option value="">Select location</option>
+                <option>Plant 1</option>
+                <option>Plant 2</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="create-step" id="create-step-2">
+          <div class="step-section-title">Configuration</div>
+          <div class="create-form-grid">
+            <div class="form-field">
+              <label for="new-department">Department</label>
+              <select id="new-department">
+                <option value="">Select department</option>
+                <option>Production</option>
+                <option>Maintenance</option>
+                <option>HR</option>
+                <option>Warehouse</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="new-law">Applicable Law / Standard (Optional)</label>
+              <input id="new-law" placeholder="e.g. Factories Act, Fire NOC" />
+            </div>
+            <div class="form-field">
+              <label for="new-freq">Frequency</label>
+              <select id="new-freq">
+                <option value="">Select frequency</option>
+                <option>Daily</option>
+                <option>Weekly</option>
+                <option>Monthly</option>
+                <option>Quarterly</option>
+                <option>Custom</option>
+              </select>
+            </div>
+            <div class="form-field" id="custom-start-wrap" style="display:none;">
+              <label for="new-custom-start">Start Date</label>
+              <input id="new-custom-start" type="date" />
+            </div>
+            <div class="form-field" id="custom-due-date-wrap" style="display:none;">
+              <label for="new-custom-due-date">Due Date</label>
+              <input id="new-custom-due-date" type="date" />
+            </div>
+          </div>
+        </div>
+
+        <div class="create-step" id="create-step-3">
+          <div class="step-section-title">Responsibility</div>
+          <div class="sub-section">
+            <div class="sub-heading">Responsibility</div>
+            <div class="create-form-grid">
+              <div class="form-field">
+                <label for="new-assigned-to">Assigned To</label>
+                <select id="new-assigned-to" onchange="updateAssignedEmployeeFromRole()">
+                  <option value="">Select role/designation</option>
+                </select>
+                <input id="new-assigned-employee-id" type="hidden" />
+                <div class="assignment-message" id="assignment-message"></div>
+              </div>
+              <div class="form-field">
+                <label for="new-reviewer">Reviewer</label>
+                <select id="new-reviewer">
+                  <option value="">Select reviewer</option>
+                  <option>Supervisor</option>
+                  <option>CA</option>
+                  <option>Auditor</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div style="display:flex;gap:10px">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateChecklist()">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="create-back-btn" onclick="createChecklistPrevStep()" style="display:none;">Back</button>
+          <button type="button" class="btn btn-primary" id="create-next-btn" onclick="createChecklistNextStep()">Next</button>
+          <button type="submit" class="btn btn-primary" id="create-submit-btn" style="display:none;">Create checklist</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="add-employee-overlay" onclick="closeAddEmployeeDrawer()"></div>
+<div id="add-employee-drawer" role="dialog" aria-modal="true" aria-label="Add Employee">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Add Employee</div>
+      <div class="drawer-sub">Capture employee details in 5 guided steps</div>
+    </div>
+    <div class="drawer-close" onclick="closeAddEmployeeDrawer()">×</div>
+  </div>
+  <div class="drawer-body">
+    <div class="emp-step-indicator">
+      <div class="emp-step-label" id="emp-step-label">Step 1 / 5</div>
+      <div class="emp-step-track"><div class="emp-step-fill" id="emp-step-fill"></div></div>
+    </div>
+
+    <form id="add-employee-form" onsubmit="submitAddEmployee(event)">
+      <section class="emp-step active" id="emp-step-1">
+        <div class="emp-section-title">Basic Details</div>
+        <div class="emp-form-grid">
+          <div class="emp-form-field">
+            <label for="emp-full-name">Full Name *</label>
+            <input id="emp-full-name" type="text" placeholder="Enter full name" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-id">Employee ID *</label>
+            <input id="emp-id" type="text" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-phone">Phone Number *</label>
+            <input id="emp-phone" type="tel" placeholder="Enter phone number" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-email">Email (Optional)</label>
+            <input id="emp-email" type="email" placeholder="name@company.com" />
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-2">
+        <div class="emp-section-title">Work Details</div>
+        <div class="emp-form-grid">
+          <div class="emp-form-field">
+            <label for="emp-dept">Department *</label>
+            <select id="emp-dept">
+              <option value="">Select department</option>
+              <option>Production</option>
+              <option>Maintenance</option>
+              <option>HR</option>
+              <option>Warehouse</option>
+            </select>
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-role">Role / Designation *</label>
+            <input id="emp-role" type="text" placeholder="Machine Operator, Supervisor" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-joining-date">Joining Date *</label>
+            <input id="emp-joining-date" type="date" />
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-3">
+        <div class="emp-section-title">Compliance Mapping</div>
+        <div class="emp-form-grid">
+          <div class="emp-toggle-row">
+            <span>PF Applicable?</span>
+            <input id="emp-pf-applicable" type="checkbox" onchange="toggleComplianceFields()" />
+          </div>
+          <div class="emp-form-field" id="emp-pf-wrap" style="display:none">
+            <label for="emp-pf-number">PF Number *</label>
+            <input id="emp-pf-number" type="text" placeholder="Enter PF number" />
+          </div>
+          <div class="emp-toggle-row">
+            <span>ESI Applicable?</span>
+            <input id="emp-esi-applicable" type="checkbox" onchange="toggleComplianceFields()" />
+          </div>
+          <div class="emp-form-field" id="emp-esi-wrap" style="display:none">
+            <label for="emp-esi-number">ESI Number *</label>
+            <input id="emp-esi-number" type="text" placeholder="Enter ESI number" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-salary-range">Salary Range *</label>
+            <input id="emp-salary-range" type="text" placeholder="e.g. ₹15,000 - ₹25,000" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-contractor">Contractor Name (Optional)</label>
+            <input id="emp-contractor" type="text" placeholder="Enter contractor name" />
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-4">
+        <div class="emp-section-title">Safety & EHS Linking</div>
+        <div class="emp-form-grid">
+          <div class="emp-check-grid">
+            <div class="emp-check-title">PPE Required</div>
+            <label class="emp-check-item"><input type="checkbox" value="Helmet" class="emp-ppe" /> Helmet</label>
+            <label class="emp-check-item"><input type="checkbox" value="Gloves" class="emp-ppe" /> Gloves</label>
+            <label class="emp-check-item"><input type="checkbox" value="Safety shoes" class="emp-ppe" /> Safety shoes</label>
+            <label class="emp-check-item"><input type="checkbox" value="Mask" class="emp-ppe" /> Mask</label>
+          </div>
+          <div class="emp-check-grid">
+            <div class="emp-check-title">Training Completed</div>
+            <label class="emp-check-item"><input type="checkbox" value="Safety training" class="emp-training" /> Safety training</label>
+            <label class="emp-check-item"><input type="checkbox" value="Machine training" class="emp-training" /> Machine training</label>
+          </div>
+          <div class="emp-form-field">
+            <label>Medical Fitness Status</label>
+            <span id="emp-medical-status" class="emp-readonly-chip pending">Pending</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-step" id="emp-step-5">
+        <div class="emp-section-title">Documents</div>
+        <div class="emp-form-grid">
+          <div class="emp-form-field">
+            <label for="emp-doc-idproof">Aadhaar / ID Proof</label>
+            <input id="emp-doc-idproof" type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="updateMedicalFitnessStatus()" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-doc-pf">PF Registration Proof</label>
+            <input id="emp-doc-pf" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-doc-esi">ESI Card</label>
+            <input id="emp-doc-esi" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+          </div>
+          <div class="emp-form-field">
+            <label for="emp-doc-training">Training Certificates</label>
+            <input id="emp-doc-training" type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="updateMedicalFitnessStatus()" />
+          </div>
+          <div style="font-size:11px;color:var(--muted);">Allowed file types: PDF, JPG, PNG</div>
+        </div>
+      </section>
+    </form>
+  </div>
+  <div class="emp-drawer-footer">
+    <button type="button" class="btn btn-secondary" id="emp-back-btn" onclick="prevEmployeeStep()" style="display:none">Back</button>
+    <button type="button" class="btn btn-primary" id="emp-next-btn" onclick="nextEmployeeStep()">Next</button>
+    <button type="button" class="btn btn-primary" id="emp-submit-btn" onclick="submitAddEmployee(event)" style="display:none">Create Employee</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+═══════════════════════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">COMPLI<span>OS</span></div>
+    <div class="logo-sub">v2.1</div>
+  </div>
+
+  <div class="sidebar-plant">
+    <div class="plant-label">Active plant</div>
+    <div class="plant-name">
+      <div class="dot-live"></div>
+      Ranjan Engineering
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+      <div class="nav-label">Dashboard</div>
+    </div>
+    <div class="nav-item" id="nav-register" onclick="showPage('register')">
+      <div class="nav-label">Compliance Register</div>
+      <div class="nav-badge badge-red">4</div>
+    </div>
+    <div class="nav-item" id="nav-audits" onclick="showPage('audits')">
+      <div class="nav-label">Audits & Checklists</div>
+      <div class="nav-badge badge-red">2</div>
+    </div>
+    <div class="nav-item" id="nav-actions" onclick="showPage('actions')">
+      <div class="nav-label">Actions & Tasks</div>
+      <div class="nav-badge badge-red">7</div>
+    </div>
+    <div class="nav-section-label">HR & Safety</div>
+    <div class="nav-item" id="nav-people" onclick="showPage('people')">
+      <div class="nav-label">People & Training</div>
+    </div>
+    <div class="nav-item" id="nav-docs" onclick="showPage('docs')">
+      <div class="nav-label">Documents & Evidence</div>
+    </div>
+    <div class="nav-section-label">Settings</div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
+      <div class="nav-label">Settings</div>
+    </div>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-meta">
+      <div class="user-avatar">AR</div>
+      <div class="user-details">
+        <div class="user-name">Aman Rajak</div>
+        <div class="user-role">Admin · EHS Head</div>
+      </div>
+    </div>
+    <button class="signout-btn" onclick="handleLogout()" aria-label="Sign out" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 4H17.5C18.6 4 19.5 4.9 19.5 6V18C19.5 19.1 18.6 20 17.5 20H12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4.5 12H15.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M11.5 8L15.5 12L11.5 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════════════════════ -->
+<div id="main">
+  <div id="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-search">
+      <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>
+      <input type="text" placeholder="Search licences, audits, actions…" id="global-search" oninput="globalSearch(this.value)"/>
+    </div>
+    <div class="topbar-icon-btn" onclick="toggleNotif()" data-tip="Notifications">
+      <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18H15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M7.5 17.5H16.5V11.2C16.5 8.6 14.6 6.4 12 6.1C9.4 6.4 7.5 8.6 7.5 11.2V17.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10.3 18C10.5 19.1 11.2 19.8 12 19.8C12.8 19.8 13.5 19.1 13.7 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <div class="notif-dot"></div>
+    </div>
+    <div class="topbar-icon-btn" data-tip="Export report" onclick="exportReport()"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M8.5 8.5L12 4.8L15.5 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 14.5V18.2C5 19 5.7 19.7 6.5 19.7H17.5C18.3 19.7 19 19 19 18.2V14.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div>
+    <button class="topbar-btn" onclick="showPage('register')">+ Add obligation</button>
+  </div>
+
+  <div id="content">
+    <!-- Pages injected by JS -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+function handleLogout() {
+  if (document.body.classList.contains('page-exit')) return;
+  document.body.classList.add('page-exit');
+  setTimeout(() => {
+    window.location.replace('index.html');
+  }, 280);
+}
+
+/* ─────────────────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────────────────── */
+const DATA = {
+  register: [
+    { id:'mpcb',  name:'MPCB Consent to Operate', cat:'Environment', law:'Water Act / Air Act', plant:'Chakan MIDC', owner:'Aman Rajak', freq:'5 years', due:'2026-03-10', status:'overdue', evidence:true,  daysLeft:-3,  fine:'₹1,50,000', portal:'https://enviis.mpcb.gov.in' },
+    { id:'dish',  name:'Factory Licence (Form 2)', cat:'Statutory',   law:'Factories Act 1948', plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-04-05', status:'due',     evidence:true,  daysLeft:21,  fine:'₹75,000',   portal:'https://dish.maharashtra.gov.in' },
+    { id:'fire',  name:'Fire NOC — Building B',    cat:'Safety',      law:'Fire Prevention Act', plant:'Chakan MIDC', owner:'Ravi Desai', freq:'Yearly',  due:'2026-04-01', status:'due',     evidence:true,  daysLeft:18,  fine:'₹50,000',   portal:'#' },
+    { id:'pf',    name:'PF Monthly Challan (Mar)', cat:'PF/ESI',      law:'EPF Act 1952',        plant:'Chakan MIDC', owner:'Priya Nair', freq:'Monthly', due:'2026-03-15', status:'due',     evidence:false, daysLeft:0,   fine:'₹25,000',   portal:'https://www.epfindia.gov.in' },
+    { id:'esi',   name:'ESI Monthly Challan (Mar)',cat:'PF/ESI',      law:'ESI Act 1948',        plant:'Chakan MIDC', owner:'Priya Nair', freq:'Monthly', due:'2026-03-15', status:'due',     evidence:false, daysLeft:0,   fine:'₹15,000',   portal:'https://www.esic.in' },
+    { id:'boiler',name:'Boiler Inspection (IBR)',  cat:'Safety',      law:'Boilers Act 1923',    plant:'Chakan MIDC', owner:'Suresh P.',  freq:'Yearly',  due:'2026-05-10', status:'ok',      evidence:true,  daysLeft:57,  fine:'₹50,000',   portal:'#' },
+    { id:'crane', name:'Crane & Hoist Certificate',cat:'Safety',      law:'MFR Rule 61',         plant:'Chakan MIDC', owner:'Suresh P.',  freq:'Yearly',  due:'2026-06-01', status:'ok',      evidence:true,  daysLeft:79,  fine:'₹30,000',   portal:'#' },
+    { id:'pf-reg',name:'PF Employer Registration', cat:'PF/ESI',      law:'EPF Act 1952',        plant:'Chakan MIDC', owner:'Priya Nair', freq:'One-time',due:'—',          status:'ok',      evidence:true,  daysLeft:999, fine:'—',          portal:'#' },
+    { id:'form11',name:'Form 11 — Pressure Vessel', cat:'Statutory',  law:'DISH Approval',       plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-04-15', status:'due',     evidence:true,  daysLeft:32,  fine:'₹40,000',   portal:'#' },
+    { id:'iatf',  name:'IATF 16949 Surveillance',  cat:'OEM',         law:'IATF Standard',       plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-07-15', status:'ok',      evidence:true,  daysLeft:124, fine:'Cert lapse', portal:'#' },
+    { id:'iso45', name:'ISO 45001 Internal Audit', cat:'OEM',         law:'ISO 45001:2018',      plant:'Chakan MIDC', owner:'Ravi Desai', freq:'Yearly',  due:'2026-05-20', status:'ok',      evidence:false, daysLeft:68,  fine:'Cert lapse', portal:'#' },
+    { id:'wr',    name:'Workmen Register (Form A)', cat:'Statutory',   law:'Factories Act 1948',  plant:'Chakan MIDC', owner:'Priya Nair', freq:'Ongoing', due:'Ongoing',    status:'ok',      evidence:true,  daysLeft:999, fine:'₹10,000',   portal:'#' },
+  ],
+  actions: [
+    { id:1, title:'Renew MPCB Consent to Operate', linked:'MPCB Overdue', owner:'AR', due:'2026-03-20', status:'overdue', priority:'high' },
+    { id:2, title:'Upload PF challan for March',    linked:'PF Filing',     owner:'PN', due:'2026-03-15', status:'overdue', priority:'high' },
+    { id:3, title:'Upload ESI challan for March',   linked:'ESI Filing',    owner:'PN', due:'2026-03-15', status:'overdue', priority:'high' },
+    { id:4, title:'Repair ladle pre-heat burner',   linked:'Foundry Audit', owner:'SP', due:'2026-03-25', status:'open',    priority:'high' },
+    { id:5, title:'Replace safety shoes — 3 workers',linked:'PPE Audit',   owner:'RD', due:'2026-03-28', status:'open',    priority:'med' },
+    { id:6, title:'Submit Fire NOC renewal form',   linked:'Fire NOC',      owner:'RD', due:'2026-04-01', status:'open',    priority:'med' },
+    { id:7, title:'Upload ISO 45001 evidence pack', linked:'ISO 45001 Audit',owner:'AR',due:'2026-04-10', status:'open',    priority:'med' },
+    { id:8, title:'Update DISH Form 11 drawings',   linked:'Form 11',       owner:'SP', due:'2026-04-15', status:'open',    priority:'low' },
+    { id:9, title:'Conduct Q1 safety induction',    linked:'Training Matrix',owner:'RD',due:'2026-03-31', status:'open',    priority:'low' },
+    { id:10,title:'Archive 2025 OEM audit records', linked:'Documents',     owner:'AR', due:'2026-04-30', status:'done',    priority:'low' },
+    { id:11,title:'Factory licence renewal package',linked:'Factory Licence',owner:'PN',due:'2026-05-01', status:'done',    priority:'low' },
+  ],
+  people: [
+    { id:'P001', name:'Ramesh Kumar',   dept:'Production',  role:'Supervisor',  pf:true,  esi:true,  uan:'100234567890', ip:'1234567890', medical:'2025-10-01', trainings:['Induction','PPE','Hot Work'] },
+    { id:'P002', name:'Suresh Patil',   dept:'Maintenance', role:'Technician',  pf:true,  esi:true,  uan:'100234567891', ip:'1234567891', medical:'2025-09-15', trainings:['Induction','PPE','Crane OHC','Foundry Safety'] },
+    { id:'P003', name:'Anita Mehta',    dept:'HR',          role:'HR Executive',pf:true,  esi:false, uan:'100234567892', ip:'—',          medical:'2025-11-20', trainings:['Induction','First Aid'] },
+    { id:'P004', name:'Vijay Sharma',   dept:'EHS',         role:'Safety Officer',pf:true,esi:true,  uan:'100234567893', ip:'1234567893', medical:'2025-08-30', trainings:['Induction','PPE','Fire Safety','Foundry Safety','Hot Work'] },
+    { id:'P005', name:'Priya Nair',     dept:'HR',          role:'HR Head',     pf:true,  esi:false, uan:'100234567894', ip:'—',          medical:'2025-12-01', trainings:['Induction'] },
+    { id:'P006', name:'Manoj Thorat',   dept:'Production',  role:'Operator',    pf:true,  esi:true,  uan:'',             ip:'1234567895', medical:'2025-07-10', trainings:['Induction','PPE'] },
+    { id:'P007', name:'Ravi Desai',     dept:'EHS',         role:'EHS Head',    pf:true,  esi:false, uan:'100234567896', ip:'—',          medical:'2025-10-15', trainings:['Induction','PPE','Fire Safety','First Aid','Foundry Safety'] },
+  ],
+  audits: [
+    { id:'A001', type:'Safety/EHS',    title:'Monthly Foundry Safety Audit',   freq:'Monthly',   due:'2026-03-31', status:'due',       plant:'Chakan MIDC', questions: [
+        { section:'Furnace & Ladle Safety',   q:'Are ladle pre-heat burners in good condition?'},
+        { section:'Furnace & Ladle Safety',   q:'Are protective screens provided near furnace?'},
+        { section:'Furnace & Ladle Safety',   q:'Are workers using face shields and aluminized aprons?'},
+        { section:'Crane & Lifting Tackle',   q:'Is daily pre-use check of crane done and recorded?'},
+        { section:'Crane & Lifting Tackle',   q:'Are slings, hooks and chains within safe working load?'},
+        { section:'Crane & Lifting Tackle',   q:'Is crane operator certified and record maintained?'},
+        { section:'PPE Compliance',           q:'Are all operators wearing safety shoes (IS 15298)?'},
+        { section:'PPE Compliance',           q:'Are heat-resistant gloves available and used?'},
+        { section:'PPE Compliance',           q:'Is PPE issuance register up to date?'},
+        { section:'Housekeeping & Emergency', q:'Are gangways and emergency exits clear?'},
+        { section:'Housekeeping & Emergency', q:'Are fire extinguishers inspected and accessible?'},
+        { section:'Housekeeping & Emergency', q:'Is scrap and waste segregated and removed daily?'},
+    ]},
+    { id:'A002', type:'Statutory',     title:'Factory Act Registers Check',    freq:'Quarterly', due:'2026-04-01', status:'due',       plant:'Chakan MIDC', questions: [
+        { section:'Statutory Registers',      q:'Is Form A (Adult Worker Register) updated?'},
+        { section:'Statutory Registers',      q:'Is the Overtime Register (Form IX) current?'},
+        { section:'Statutory Registers',      q:'Is the Accident Register (Form 16) maintained?'},
+        { section:'Leave & Wages',            q:'Is the Leave with Wages Register (Form G) current?'},
+        { section:'Leave & Wages',            q:'Are wage slips issued for the last month?'},
+        { section:'Notices',                  q:'Is the Factory Act notice displayed in local language?'},
+        { section:'Notices',                  q:'Is the list of certified first-aiders displayed?'},
+    ]},
+    { id:'A003', type:'OEM',           title:'Bajaj Pre-Audit Checklist',       freq:'As needed', due:'2026-04-05', status:'upcoming',  plant:'Chakan MIDC', questions: [
+        { section:'Quality System',           q:'Is IATF 16949 certificate current and displayed?'},
+        { section:'Quality System',           q:'Are process FMEAs reviewed in last 12 months?'},
+        { section:'Quality System',           q:'Are gauges calibrated with valid stickers?'},
+        { section:'EHS & Labour',             q:'Are all statutory licences valid and accessible?'},
+        { section:'EHS & Labour',             q:'Are PF/ESI contributions current with challans on file?'},
+        { section:'EHS & Labour',             q:'Is a monthly EHS audit done and records available?'},
+        { section:'Supplier Compliance',      q:'Are material test certificates available for RM?'},
+        { section:'Supplier Compliance',      q:'Are finished goods QA reports archived by batch?'},
+    ]},
+    { id:'A004', type:'Safety/EHS',    title:'Weekly Crane & Hoist Inspection', freq:'Weekly',    due:'2026-03-13', status:'completed', plant:'Chakan MIDC', questions:[] },
+    { id:'A005', type:'PPE',           title:'PPE Condition & Issuance Check',  freq:'Monthly',   due:'2026-04-15', status:'upcoming',  plant:'Chakan MIDC', questions: [
+        { section:'Safety Shoes',             q:'Are all workers issued IS 15298 certified safety shoes?'},
+        { section:'Safety Shoes',             q:'Are shoe condition records checked monthly?'},
+        { section:'Eye & Face Protection',    q:'Are welding shields available at all welding stations?'},
+        { section:'Eye & Face Protection',    q:'Are safety goggles available for grinding operations?'},
+        { section:'Hand Protection',          q:'Are heat-resistant gloves available for furnace team?'},
+        { section:'Hearing Protection',       q:'Are earplugs/muffs available in high-noise areas?'},
+    ]},
+  ],
+  docs: [
+    { id:'D001', name:'MPCB Consent to Operate 2021',   folder:'Licences',  type:'pdf',   size:'2.4 MB', date:'2021-04-01', expiry:'2026-03-10', tag:'overdue' },
+    { id:'D002', name:'Factory Licence 2025-26',         folder:'Licences',  type:'pdf',   size:'856 KB', date:'2025-04-05', expiry:'2026-04-05', tag:'due' },
+    { id:'D003', name:'Fire NOC Building A 2025',        folder:'Licences',  type:'pdf',   size:'1.1 MB', date:'2025-03-15', expiry:'2026-03-15', tag:'expired' },
+    { id:'D004', name:'PF Challan Feb 2026',             folder:'PF/ESI',    type:'pdf',   size:'312 KB', date:'2026-02-14', expiry:'—',          tag:'ok' },
+    { id:'D005', name:'ESI Challan Feb 2026',            folder:'PF/ESI',    type:'pdf',   size:'280 KB', date:'2026-02-14', expiry:'—',          tag:'ok' },
+    { id:'D006', name:'Foundry Audit Mar 2026',          folder:'Audits',    type:'pdf',   size:'4.2 MB', date:'2026-03-01', expiry:'—',          tag:'ok' },
+    { id:'D007', name:'IATF Certificate 2024-2027',      folder:'OEM',       type:'pdf',   size:'780 KB', date:'2024-07-15', expiry:'2027-07-15', tag:'ok' },
+    { id:'D008', name:'Boiler Inspection Report 2025',   folder:'Licences',  type:'pdf',   size:'1.8 MB', date:'2025-05-10', expiry:'2026-05-10', tag:'ok' },
+    { id:'D009', name:'PPE Issuance Register Q1 2026',   folder:'Safety',    type:'xlsx',  size:'96 KB',  date:'2026-01-15', expiry:'—',          tag:'ok' },
+    { id:'D010', name:'Bajaj OEM Audit Pack 2025',       folder:'OEM',       type:'zip',   size:'18 MB',  date:'2025-11-20', expiry:'—',          tag:'ok' },
+  ],
+};
+
+/* ─────────────────────────────────────────────────────────
+   ONBOARDING
+───────────────────────────────────────────────────────── */
+let obStep = 1;
+
+function setOnboardingIcon(type = 'loading') {
+  const icon = document.getElementById('ob-icon');
+  if (!icon) return;
+  if (type === 'success') {
+    icon.innerHTML = `
+      <svg viewBox="0 0 78 78" role="img" aria-label="Complete">
+        <defs>
+          <linearGradient id="obSuccessBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#C6AC8F"></stop>
+            <stop offset="100%" stop-color="#5E503F"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="39" cy="39" r="36" fill="url(#obSuccessBg)" opacity="0.22"></circle>
+        <circle cx="39" cy="39" r="27" fill="none" stroke="#5E503F" stroke-width="2.5"></circle>
+        <path d="M27 39.5l8 8 16-16" fill="none" stroke="#22333B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    `;
+    return;
+  }
+  icon.innerHTML = `
+    <svg viewBox="0 0 78 78" role="img" aria-label="Setup in progress">
+      <defs>
+        <linearGradient id="obLoadBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#22333B"></stop>
+          <stop offset="100%" stop-color="#5E503F"></stop>
+        </linearGradient>
+      </defs>
+      <circle cx="39" cy="39" r="36" fill="#EAE0D5"></circle>
+      <circle cx="39" cy="39" r="28" fill="none" stroke="url(#obLoadBg)" stroke-width="2.5"></circle>
+      <path d="M26 47V31l13-6 13 6v16" fill="none" stroke="#5E503F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M33 42h12M33 36h8" stroke="#22333B" stroke-width="2.6" stroke-linecap="round"></path>
+    </svg>
+  `;
+}
+
+function nextOnboard(step) {
+  document.getElementById('os' + obStep).classList.remove('active');
+  obStep = step;
+  document.getElementById('os' + obStep).classList.add('active');
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('ps' + i).classList.toggle('done', i <= step);
+  }
+  if (step === 3) runOnboardingLoad();
+}
+
+function runOnboardingLoad() {
+  const items = [
+    'Maharashtra Factories Rules 1963…',
+    'MPCB Consent obligations…',
+    'DISH Factory Licence schedule…',
+    'Foundry safety checklists…',
+    'PF / ESI tracking templates…',
+    'Crane & boiler inspection schedule…',
+    'OEM audit checklist (Bajaj/VW)…',
+    'Fire NOC reminders…',
+    'Labour registers (Form A, G, IX)…',
+    'ISO 45001 audit template…',
+  ];
+  let i = 0;
+  const prog = document.getElementById('ob-progress');
+  const msg  = document.getElementById('ob-msg');
+  const sub  = document.getElementById('ob-sub');
+  const list = document.getElementById('ob-items');
+  setOnboardingIcon('loading');
+  msg.textContent = 'Loading compliance pack…';
+  sub.textContent = 'Configuring 33 obligations · Maharashtra';
+
+  const iv = setInterval(() => {
+    if (i >= items.length) {
+      clearInterval(iv);
+      prog.style.width = '100%';
+      setOnboardingIcon('success');
+      msg.textContent = 'Your compliance register is ready!';
+      sub.textContent = '33 obligations loaded · 4 require immediate attention';
+      setTimeout(() => {
+        document.getElementById('onboard-modal').style.display = 'none';
+        showPage('dashboard');
+        showToast('✅ CompliOS configured · 33 obligations loaded', 'success');
+      }, 1400);
+      return;
+    }
+    prog.style.width = ((i + 1) / items.length * 100) + '%';
+    list.innerHTML += `<div style="padding:2px 0;opacity:0.7">✓ ${items[i]}</div>`;
+    i++;
+  }, 280);
+}
+
+/* ─────────────────────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────────────────────── */
+function showPage(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard',
+    register:  'Compliance Register',
+    audits:    'Audits & Checklists',
+    actions:   'Actions & Tasks',
+    people:    'People & Training',
+    docs:      'Documents & Evidence',
+    settings:  'Settings',
+  };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  const pages = { dashboard, register, audits, actions, people, docs, settings };
+  if (pages[page]) {
+    content.innerHTML = pages[page]();
+    afterRender(page);
+  }
+}
+
+function afterRender(page) {
+  if (page === 'dashboard') initCalendar();
+}
+
+/* ─────────────────────────────────────────────────────────
+   DASHBOARD
+───────────────────────────────────────────────────────── */
+function dashboard() {
+  const over  = DATA.register.filter(r => r.status === 'overdue').length;
+  const due   = DATA.register.filter(r => r.status === 'due').length;
+  const ok    = DATA.register.filter(r => r.status === 'ok').length;
+  const openA = DATA.actions.filter(a => a.status !== 'done').length;
+
+  return `
+  <div class="fade-up">
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="kpi-tile ok">
+        <div class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="kpi-num">${ok}</div>
+        <div class="kpi-label">Licences OK</div>
+        <div class="kpi-sub">No action needed</div>
+      </div>
+      <div class="kpi-tile warn">
+        <div class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L21 20H3L12 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg></div>
+        <div class="kpi-num">${due}</div>
+        <div class="kpi-label">Due / Expiring</div>
+        <div class="kpi-sub">Action required soon</div>
+      </div>
+      <div class="kpi-tile danger">
+        <div class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 13V11C8 8.8 9.8 7 12 7C14.2 7 16 8.8 16 11V13" stroke="currentColor" stroke-width="2"/><path d="M6 13H18V17H6V13Z" stroke="currentColor" stroke-width="2"/><path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div class="kpi-num">${over}</div>
+        <div class="kpi-label">Overdue / Expired</div>
+        <div class="kpi-sub">Immediate action needed</div>
+      </div>
+      <div class="kpi-tile info">
+        <div class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 3L6 13H11L10 21L18 10H13L13 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+        <div class="kpi-num">${openA}</div>
+        <div class="kpi-label">Open Actions</div>
+        <div class="kpi-sub">Across all categories</div>
+      </div>
+      <div class="kpi-tile navy">
+        <div class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="6" width="16" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 10H20" stroke="currentColor" stroke-width="2"/><path d="M8 4V8M16 4V8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div class="kpi-num">12</div>
+        <div class="kpi-label">Days to Bajaj Audit</div>
+        <div class="kpi-sub">April 5, 2026</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="dash-grid">
+      <div>
+        <!-- Overdue items -->
+        <div class="card" style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div>
+              <div class="card-title">Requires Immediate Attention</div>
+              <div class="card-sub">${over} overdue · ${due} due soon</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('register')">View all →</button>
+          </div>
+          ${DATA.register.filter(r => r.status === 'overdue' || (r.status === 'due' && r.daysLeft <= 5)).map(r => `
+          <div class="overdue-item ${r.status === 'overdue' ? 'critical' : 'warning'}" onclick="showRegisterDetail('${r.id}')">
+            <div class="overdue-icon">${r.status === 'overdue' ? '🔴' : '🟡'}</div>
+            <div style="flex:1">
+              <div class="overdue-title">${r.name}</div>
+              <div class="overdue-meta">${r.cat} · ${r.law} · ${r.status === 'overdue' ? 'OVERDUE by ' + Math.abs(r.daysLeft) + ' days' : 'Due in ' + r.daysLeft + ' days'}</div>
+            </div>
+            <div class="overdue-cta">
+              <span class="badge ${r.status === 'overdue' ? 'badge-overdue' : 'badge-due'}">${r.status === 'overdue' ? 'OVERDUE' : r.daysLeft + ' days'}</span>
+            </div>
+          </div>`).join('')}
+        </div>
+
+        <!-- Recent audits -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="card-title">Upcoming Audits this Month</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('audits')">View all →</button>
+          </div>
+          ${DATA.audits.filter(a => a.status !== 'completed').slice(0,3).map(a => `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--surface-2)">
+            <div style="width:44px;height:44px;border-radius:10px;background:${a.type==='OEM'?'rgba(34,51,59,0.10)':a.type==='Safety/EHS'?'rgba(198,172,143,0.14)':'rgba(94,80,63,0.10)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${a.type==='OEM'?'🏭':a.type==='Safety/EHS'?'🦺':'📋'}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${a.title}</div>
+              <div style="font-size:11px;color:var(--muted);font-family:var(--font-m)">${a.type} · Due ${a.due}</div>
+            </div>
+            <span class="badge ${a.status==='due'?'badge-due':'badge-info'}">${a.status.toUpperCase()}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div>
+        <!-- Calendar -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:14px">March 2026</div>
+          <div class="cal-grid" id="cal-headers"></div>
+          <div class="cal-grid" style="margin-top:6px" id="cal-days"></div>
+        </div>
+
+        <!-- Compliance score -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:16px">Compliance Health Score</div>
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-family:var(--font-d);font-size:48px;font-weight:800;color:var(--amber)">71%</div>
+            <div style="font-size:12px;color:var(--muted)">4 critical items bring score down</div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>Licences & Consents</span><span style="color:var(--red);font-weight:600">60%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill red" style="width:60%"></div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>Safety & EHS</span><span style="color:var(--amber);font-weight:600">78%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill amber" style="width:78%"></div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>PF / ESI</span><span style="color:var(--amber);font-weight:600">75%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill amber" style="width:75%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>OEM / Audits</span><span style="color:var(--green-d);font-weight:600">88%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill green" style="width:88%"></div></div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">Quick Actions</div>
+          <button class="btn btn-navy" style="width:100%;margin-bottom:8px;justify-content:center" onclick="exportReport()"><span class="btn-icon light" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M8.5 8.5L12 4.8L15.5 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 14.5V18.2C5 19 5.7 19.7 6.5 19.7H17.5C18.3 19.7 19 19 19 18.2V14.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>Export OEM Audit Pack</button>
+          <button class="btn btn-secondary" style="width:100%;margin-bottom:8px;justify-content:center" onclick="showPage('audits')"><span class="btn-icon navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 6.8C8 5.9 9 5.4 9.8 5.9L17 10.3C17.8 10.8 17.8 12 17 12.5L9.8 16.9C9 17.4 8 16.9 8 16V6.8Z"/></svg></span>Start Foundry Audit</button>
+          <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="showToast('WhatsApp report sent to Aman Rajak','success')"><span class="btn-icon navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L6.9 14.7C6.1 13.8 5.7 12.7 5.7 11.5C5.7 8.4 8.4 6 12 6C15.6 6 18.3 8.4 18.3 11.5C18.3 14.6 15.6 17 12 17C10.8 17 9.7 16.7 8.7 16.1L6 18Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.7 11.3H14.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Send Daily WhatsApp Report</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function initCalendar() {
+  const headers = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hEl = document.getElementById('cal-headers');
+  const dEl = document.getElementById('cal-days');
+  if (!hEl) return;
+  hEl.innerHTML = headers.map(h => `<div class="cal-header">${h}</div>`).join('');
+  // March 2026 starts on Sunday = 7 (Mon-Sun grid offset 6)
+  const daysInMonth = 31;
+  const startOffset = 6; // March 1, 2026 is Sunday
+  const events = {10: 'red', 13: 'amber', 15: 'amber', 20: 'amber', 31: 'green'};
+  let html = '';
+  for (let i = 0; i < startOffset; i++) html += `<div class="cal-day past"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === 15;
+    const ev = events[d];
+    html += `<div class="cal-day ${isToday?'today':''} ${ev?'has-event event-'+ev:''}" onclick="showToast('March ${d}: ${ev==='red'?'MPCB overdue':ev==='amber'?'Filing/renewal due':'Audit scheduled'}','${ev||'info'}')">${d}</div>`;
+  }
+  dEl.innerHTML = html;
+}
+
+/* ─────────────────────────────────────────────────────────
+   REGISTER
+───────────────────────────────────────────────────────── */
+let activeFilters = { cat: 'All', status: 'All' };
+let activeSearchQuery = '';
+
+function getRegisterRows() {
+  let rows = DATA.register;
+  if (activeFilters.cat !== 'All')    rows = rows.filter(r => r.cat === activeFilters.cat);
+  if (activeFilters.status !== 'All') rows = rows.filter(r => r.status === activeFilters.status);
+  if (activeSearchQuery) {
+    const q = activeSearchQuery.toLowerCase();
+    rows = rows.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.cat.toLowerCase().includes(q) ||
+      r.law.toLowerCase().includes(q) ||
+      r.owner.toLowerCase().includes(q)
+    );
+  }
+  return rows;
+}
+
+function register() {
+  const cats = ['All','Statutory','Environment','Safety','PF/ESI','OEM'];
+  const statuses = ['All','overdue','due','ok'];
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Compliance Register</div>
+        <div class="page-sub">All obligations · ${DATA.register.length} items · Chakan MIDC</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="exportReport()">📤 Export</button>
+        <button class="btn btn-primary" onclick="showToast('Add obligation form — coming soon','info')">+ Add obligation</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <span style="font-family:var(--font-m);font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Category:</span>
+      ${cats.map(c => `<div class="filter-chip ${activeFilters.cat===c?'active':''}" onclick="filterRegister('cat','${c}')">${c}</div>`).join('')}
+      <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+      <span style="font-family:var(--font-m);font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Status:</span>
+      <div class="filter-chip red ${activeFilters.status==='overdue'?'active':''}" onclick="filterRegister('status','overdue')">🔴 Overdue</div>
+      <div class="filter-chip orange ${activeFilters.status==='due'?'active':''}" onclick="filterRegister('status','due')">🟡 Due</div>
+      <div class="filter-chip green ${activeFilters.status==='ok'?'active':''}" onclick="filterRegister('status','ok')">🟢 OK</div>
+      <div class="filter-chip ${activeFilters.status==='All'&&activeFilters.cat==='All'?'active':''}" onclick="filterRegister('all','All')">Clear filters</div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table" id="register-table">
+        <thead>
+          <tr>
+            <th>Obligation</th>
+            <th>Category</th>
+            <th>Law / Framework</th>
+            <th>Owner</th>
+            <th>Frequency</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody id="register-tbody">
+          ${renderRegisterRows(getRegisterRows())}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderRegisterRows(rows) {
+  if (!rows.length) {
+    return `
+    <tr>
+      <td colspan="8" style="padding:22px;text-align:center;color:var(--muted)">
+        No matching obligations found. Try a different search or clear filters.
+      </td>
+    </tr>`;
+  }
+  return rows.map(r => `
+  <tr onclick="showRegisterDetail('${r.id}')">
+    <td class="cell-primary">${r.name}</td>
+    <td><span class="badge badge-info">${r.cat}</span></td>
+    <td class="cell-muted">${r.law}</td>
+    <td style="font-size:12px">${r.owner}</td>
+    <td class="cell-mono">${r.freq}</td>
+    <td class="cell-mono">${r.due}</td>
+    <td><span class="badge ${r.status==='overdue'?'badge-overdue':r.status==='due'?'badge-due':'badge-ok'}">${r.status==='overdue'?'OVERDUE':r.status==='due'?'DUE IN '+r.daysLeft+'d':'OK'}</span></td>
+    <td>${r.evidence ? '<span style="color:var(--green-d)">✓ Filed</span>' : '<span style="color:var(--red)">⚠ Missing</span>'}</td>
+  </tr>`).join('');
+}
+
+function filterRegister(key, val) {
+  if (key === 'all') { activeFilters = { cat:'All', status:'All' }; }
+  else { activeFilters[key] = activeFilters[key] === val ? 'All' : val; }
+  const rows = getRegisterRows();
+  const tbody = document.getElementById('register-tbody');
+  if (tbody) tbody.innerHTML = renderRegisterRows(rows);
+  showPage('register');
+}
+
+function showRegisterDetail(id) {
+  const r = DATA.register.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('drawer-title').textContent = r.name;
+  document.getElementById('drawer-sub').textContent = r.cat + ' · ' + r.plant;
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="margin-bottom:20px">
+      <span class="badge ${r.status==='overdue'?'badge-overdue':r.status==='due'?'badge-due':'badge-ok'}" style="font-size:12px;padding:5px 14px">${r.status==='overdue'?'⚠ OVERDUE':r.status==='due'?'⚡ DUE SOON':'✅ COMPLIANT'}</span>
+    </div>
+    <div>
+      ${[
+        ['Category', r.cat],
+        ['Law / Framework', r.law],
+        ['Plant', r.plant],
+        ['Owner', r.owner],
+        ['Renewal Frequency', r.freq],
+        ['Next Due Date', r.due],
+        ['Days Left', r.daysLeft < 0 ? `<span style="color:var(--red);font-weight:700">${Math.abs(r.daysLeft)} days overdue</span>` : r.daysLeft > 100 ? 'Not urgent' : `<span style="color:var(--amber)">${r.daysLeft} days remaining</span>`],
+        ['Potential Fine', `<span style="color:var(--red)">${r.fine}</span>`],
+        ['Evidence on File', r.evidence ? '<span style="color:var(--green-d)">✓ Uploaded</span>' : '<span style="color:var(--red)">⚠ Missing — upload required</span>'],
+        ['Portal Link', `<a href="${r.portal}" target="_blank" style="color:var(--orange);text-decoration:none">${r.portal === '#' ? 'N/A' : '🔗 Open portal'}</a>`],
+      ].map(([l,v]) => `<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    </div>
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">History</div>
+    ${[
+      {date:'Mar 2021', text:'Initial consent obtained. Uploaded to documents.', color:'var(--green-l)'},
+      {date:'Mar 2023', text:'Renewal reminder sent to Aman Rajak (60 days notice).', color:'var(--navy-light)'},
+      {date:'Jan 2026', text:'Renewal process initiated. Application submitted to MPCB portal.', color:'var(--amber-l)'},
+      {date:'Mar 10, 2026', text:'Consent expired. OVERDUE. Renewal pending MPCB inspection.', color:'var(--red-l)'},
+    ].map(h => `<div class="history-item"><div class="history-dot" style="background:${h.color}"></div><div><div class="history-date">${h.date}</div><div class="history-text">${h.text}</div></div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="upload-zone" onclick="showToast('File upload — select document','info')">
+      <div class="upload-zone-icon">📎</div>
+      <div class="upload-zone-text">Drop document here or <strong>click to upload</strong><br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, PNG up to 20MB</span></div>
+    </div>`;
+
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="showToast('Mark as renewed — upload required','info')">✅ Mark as renewed</button>
+    <button class="btn btn-secondary" onclick="showToast('Reminder set for Aman Rajak','success')">📩 Send reminder</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Close</button>`;
+
+  openDrawer();
+}
+
+/* ─────────────────────────────────────────────────────────
+   AUDITS
+───────────────────────────────────────────────────────── */
+function audits() {
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Audits & Checklists</div>
+        <div class="page-sub">${DATA.audits.length} checklists · 2 due this month</div>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateChecklist()">+ Create checklist</button>
+    </div>
+
+    <div class="audit-cards">
+      ${DATA.audits.map(a => `
+      <div class="audit-card" onclick="openAudit('${a.id}')">
+        <div class="audit-card-type">${a.type}</div>
+        <div class="audit-card-title">${a.title}</div>
+        <div class="audit-card-meta">📋 ${a.freq} · Due: ${a.due} · ${a.plant}</div>
+        <div class="audit-card-footer">
+          <span class="badge ${a.status==='due'?'badge-due':a.status==='completed'?'badge-ok':a.status==='overdue'?'badge-overdue':'badge-pending'}">${a.status.toUpperCase()}</span>
+          ${a.status !== 'completed' && a.questions.length > 0 ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openChecklist('${a.id}')">▶ Start</button>` : a.status==='completed' ? '<span style="font-size:12px;color:var(--green-d)">✓ Completed</span>' : '<span style="font-size:12px;color:var(--muted)">No questions yet</span>'}
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function openCreateChecklist() {
+  resetCreateChecklistForm();
+  document.getElementById('create-checklist-modal').classList.add('open');
+}
+
+function closeCreateChecklist() {
+  document.getElementById('create-checklist-modal').classList.remove('open');
+}
+
+let createChecklistStep = 1;
+const CREATE_STEP_COUNT = 3;
+
+function updateCustomFrequencyFields() {
+  const isCustom = document.getElementById('new-freq').value === 'Custom';
+  document.getElementById('custom-start-wrap').style.display = isCustom ? 'block' : 'none';
+  document.getElementById('custom-due-date-wrap').style.display = isCustom ? 'block' : 'none';
+  if (!isCustom) {
+    document.getElementById('new-custom-start').value = '';
+    document.getElementById('new-custom-due-date').value = '';
+  }
+}
+
+function getCreateChecklistDateValidationMessage() {
+  const freq = document.getElementById('new-freq').value;
+  if (freq !== 'Custom') return '';
+
+  const customStartDate = document.getElementById('new-custom-start').value;
+  const customDueDate = document.getElementById('new-custom-due-date').value;
+  if (!customStartDate || !customDueDate) return '';
+
+  return customStartDate > customDueDate
+    ? 'Start date cannot be after due date. Please choose valid dates.'
+    : '';
+}
+
+function populateAssignedToOptions() {
+  const select = document.getElementById('new-assigned-to');
+  const assignmentMessage = document.getElementById('assignment-message');
+  const assignedEmployeeId = document.getElementById('new-assigned-employee-id');
+  if (!select) return;
+
+  const employees = Array.isArray(DATA?.people) ? DATA.people : [];
+  if (!employees.length) {
+    select.innerHTML = '<option value="">No role/designation available</option>';
+    select.value = '';
+    select.disabled = true;
+    if (assignedEmployeeId) assignedEmployeeId.value = '';
+    if (assignmentMessage) {
+      assignmentMessage.textContent = '';
+      assignmentMessage.className = 'assignment-message';
+    }
+    return;
+  }
+
+  select.disabled = false;
+  const roleOptions = [...new Set(employees.map(p => p.role).filter(Boolean))]
+    .map(role => `<option value="${role}">${role}</option>`)
+    .join('');
+  select.innerHTML = `<option value="">Select role/designation</option>${roleOptions}`;
+  updateAssignedEmployeeFromRole();
+}
+
+function updateAssignedEmployeeFromRole() {
+  const select = document.getElementById('new-assigned-to');
+  const assignmentMessage = document.getElementById('assignment-message');
+  const assignedEmployeeId = document.getElementById('new-assigned-employee-id');
+  if (!select || !assignmentMessage || !assignedEmployeeId) return;
+
+  const selectedRole = select.value;
+  if (!selectedRole) {
+    assignedEmployeeId.value = '';
+    assignmentMessage.textContent = '';
+    assignmentMessage.className = 'assignment-message';
+    return;
+  }
+
+  const matchedEmployee = (Array.isArray(DATA?.people) ? DATA.people : [])
+    .find(person => person.role === selectedRole);
+  if (matchedEmployee) {
+    assignedEmployeeId.value = matchedEmployee.id;
+    assignmentMessage.textContent = `Assigned employee: ${matchedEmployee.name}`;
+    assignmentMessage.className = 'assignment-message success';
+    return;
+  }
+
+  assignedEmployeeId.value = '';
+  assignmentMessage.textContent = 'No employee assigned to this role';
+  assignmentMessage.className = 'assignment-message warning';
+}
+
+function isCreateStepValid(step) {
+  if (step === 1) {
+    return Boolean(
+      document.getElementById('new-title').value.trim() &&
+      document.getElementById('new-type').value &&
+      document.getElementById('new-location').value
+    );
+  }
+
+  if (step === 2) {
+    const department = document.getElementById('new-department').value;
+    const freq = document.getElementById('new-freq').value;
+    if (!department || !freq) return false;
+    if (freq === 'Custom') {
+      const customStartDate = document.getElementById('new-custom-start').value;
+      const customDueDate = document.getElementById('new-custom-due-date').value;
+      if (!customStartDate || !customDueDate) return false;
+      return !getCreateChecklistDateValidationMessage();
+    }
+    return true;
+  }
+
+  if (step === 3) {
+    return Boolean(
+      document.getElementById('new-assigned-to').value &&
+      document.getElementById('new-reviewer').value
+    );
+  }
+
+  return false;
+}
+
+function updateCreateChecklistStepUI() {
+  for (let s = 1; s <= CREATE_STEP_COUNT; s++) {
+    document.getElementById(`create-step-${s}`).classList.toggle('active', s === createChecklistStep);
+  }
+  document.getElementById('create-step-label').textContent = `Step ${createChecklistStep} / ${CREATE_STEP_COUNT}`;
+  document.getElementById('create-step-fill').style.width = `${(createChecklistStep / CREATE_STEP_COUNT) * 100}%`;
+  document.getElementById('create-back-btn').style.display = createChecklistStep === 1 ? 'none' : 'inline-flex';
+  document.getElementById('create-next-btn').style.display = createChecklistStep === CREATE_STEP_COUNT ? 'none' : 'inline-flex';
+  document.getElementById('create-submit-btn').style.display = createChecklistStep === CREATE_STEP_COUNT ? 'inline-flex' : 'none';
+}
+
+function createChecklistNextStep() {
+  if (!isCreateStepValid(createChecklistStep)) {
+    if (createChecklistStep === 3 && !document.getElementById('new-assigned-to').value) {
+      showToast('Please select a role/designation before creating checklist', 'warning');
+      return;
+    }
+    const dateValidationMessage = getCreateChecklistDateValidationMessage();
+    showToast(dateValidationMessage || 'Please complete required fields before continuing', 'warning');
+    return;
+  }
+  createChecklistStep = Math.min(CREATE_STEP_COUNT, createChecklistStep + 1);
+  updateCreateChecklistStepUI();
+}
+
+function createChecklistPrevStep() {
+  createChecklistStep = Math.max(1, createChecklistStep - 1);
+  updateCreateChecklistStepUI();
+}
+
+function resetCreateChecklistForm() {
+  const form = document.querySelector('#create-checklist-modal form');
+  if (form) form.reset();
+  populateAssignedToOptions();
+  updateAssignedEmployeeFromRole();
+  createChecklistStep = 1;
+  updateCustomFrequencyFields();
+  updateCreateChecklistStepUI();
+}
+
+function submitCreateChecklist(event) {
+  event.preventDefault();
+  if (!isCreateStepValid(1) || !isCreateStepValid(2) || !isCreateStepValid(3)) {
+    if (!document.getElementById('new-assigned-to').value) {
+      showToast('Please select a role/designation before creating checklist', 'warning');
+      return;
+    }
+    const dateValidationMessage = getCreateChecklistDateValidationMessage();
+    showToast(dateValidationMessage || 'Please fill all required fields', 'warning');
+    return;
+  }
+
+  const title = document.getElementById('new-title').value.trim();
+  const type = document.getElementById('new-type').value;
+  const freq = document.getElementById('new-freq').value;
+  const plant = document.getElementById('new-location').value;
+
+  DATA.audits.unshift({
+    id: `A${String(Date.now()).slice(-6)}`,
+    type,
+    title,
+    freq,
+    due: freq === 'Daily' ? 'Today' : freq === 'Weekly' ? 'This week' : freq === 'Monthly' ? 'This month' : 'Scheduled',
+    status: 'upcoming',
+    plant,
+    questions: [],
+  });
+
+  resetCreateChecklistForm();
+  closeCreateChecklist();
+  showPage('audits');
+  showToast('Checklist created successfully', 'success');
+}
+
+const EMPLOYEE_STEP_COUNT = 5;
+const employeeFormState = { step: 1 }; // Mirrors: const [step, setStep] = useState(1)
+
+function setEmployeeStep(nextStep) {
+  employeeFormState.step = Math.min(EMPLOYEE_STEP_COUNT, Math.max(1, nextStep));
+  updateEmployeeStepUI();
+}
+
+function generateEmployeeId() {
+  const maxId = DATA.people.reduce((max, person) => {
+    const parsed = parseInt(String(person.id || '').replace(/\D/g, ''), 10);
+    return Number.isFinite(parsed) ? Math.max(max, parsed) : max;
+  }, 1000);
+  return `EMP-${maxId + 1}`;
+}
+
+function openAddEmployeeDrawer() {
+  resetAddEmployeeForm();
+  document.getElementById('add-employee-overlay').classList.add('open');
+  document.getElementById('add-employee-drawer').classList.add('open');
+}
+
+function closeAddEmployeeDrawer() {
+  document.getElementById('add-employee-overlay').classList.remove('open');
+  document.getElementById('add-employee-drawer').classList.remove('open');
+}
+
+function resetAddEmployeeForm() {
+  const form = document.getElementById('add-employee-form');
+  if (form) form.reset();
+  const employeeIdField = document.getElementById('emp-id');
+  if (employeeIdField) employeeIdField.value = generateEmployeeId();
+  setEmployeeStep(1);
+  toggleComplianceFields();
+  updateMedicalFitnessStatus();
+}
+
+function toggleComplianceFields() {
+  const pfEnabled = document.getElementById('emp-pf-applicable').checked;
+  const esiEnabled = document.getElementById('emp-esi-applicable').checked;
+  document.getElementById('emp-pf-wrap').style.display = pfEnabled ? 'block' : 'none';
+  document.getElementById('emp-esi-wrap').style.display = esiEnabled ? 'block' : 'none';
+  if (!pfEnabled) document.getElementById('emp-pf-number').value = '';
+  if (!esiEnabled) document.getElementById('emp-esi-number').value = '';
+  updateEmployeeStepUI();
+}
+
+function updateMedicalFitnessStatus() {
+  const statusNode = document.getElementById('emp-medical-status');
+  if (!statusNode) return;
+  const hasMedicalDocument = Boolean(
+    document.getElementById('emp-doc-idproof')?.files?.length ||
+    document.getElementById('emp-doc-training')?.files?.length
+  );
+  statusNode.textContent = hasMedicalDocument ? 'Fit' : 'Pending';
+  statusNode.className = `emp-readonly-chip ${hasMedicalDocument ? 'fit' : 'pending'}`;
+}
+
+function isEmployeeStepValid(step = employeeFormState.step) {
+  if (step === 1) {
+    return Boolean(
+      document.getElementById('emp-full-name').value.trim() &&
+      document.getElementById('emp-id').value.trim() &&
+      document.getElementById('emp-phone').value.trim()
+    );
+  }
+  if (step === 2) {
+    return Boolean(
+      document.getElementById('emp-dept').value &&
+      document.getElementById('emp-role').value.trim() &&
+      document.getElementById('emp-joining-date').value
+    );
+  }
+  if (step === 3) {
+    const pfEnabled = document.getElementById('emp-pf-applicable').checked;
+    const esiEnabled = document.getElementById('emp-esi-applicable').checked;
+    if (!document.getElementById('emp-salary-range').value.trim()) return false;
+    if (pfEnabled && !document.getElementById('emp-pf-number').value.trim()) return false;
+    if (esiEnabled && !document.getElementById('emp-esi-number').value.trim()) return false;
+    return true;
+  }
+  return true;
+}
+
+function updateEmployeeStepUI() {
+  const step = employeeFormState.step;
+  for (let s = 1; s <= EMPLOYEE_STEP_COUNT; s++) {
+    document.getElementById(`emp-step-${s}`).classList.toggle('active', s === step);
+  }
+  document.getElementById('emp-step-label').textContent = `Step ${step} / ${EMPLOYEE_STEP_COUNT}`;
+  document.getElementById('emp-step-fill').style.width = `${(step / EMPLOYEE_STEP_COUNT) * 100}%`;
+  document.getElementById('emp-back-btn').style.display = step === 1 ? 'none' : 'inline-flex';
+  document.getElementById('emp-next-btn').style.display = step === EMPLOYEE_STEP_COUNT ? 'none' : 'inline-flex';
+  document.getElementById('emp-submit-btn').style.display = step === EMPLOYEE_STEP_COUNT ? 'inline-flex' : 'none';
+  document.getElementById('emp-next-btn').disabled = !isEmployeeStepValid(step);
+}
+
+function nextEmployeeStep() {
+  if (!isEmployeeStepValid(employeeFormState.step)) {
+    showToast('Please complete required fields before continuing', 'warning');
+    return;
+  }
+  setEmployeeStep(employeeFormState.step + 1);
+}
+
+function prevEmployeeStep() {
+  setEmployeeStep(employeeFormState.step - 1);
+}
+
+function getSelectedValues(selector) {
+  return [...document.querySelectorAll(selector)]
+    .filter((node) => node.checked)
+    .map((node) => node.value);
+}
+
+function submitAddEmployee(event) {
+  if (event) event.preventDefault();
+  if (!isEmployeeStepValid(1) || !isEmployeeStepValid(2) || !isEmployeeStepValid(3)) {
+    showToast('Please complete required fields before creating employee', 'warning');
+    return;
+  }
+
+  const payload = {
+    basicDetails: {
+      fullName: document.getElementById('emp-full-name').value.trim(),
+      employeeId: document.getElementById('emp-id').value.trim(),
+      phoneNumber: document.getElementById('emp-phone').value.trim(),
+      email: document.getElementById('emp-email').value.trim(),
+    },
+    workDetails: {
+      department: document.getElementById('emp-dept').value,
+      role: document.getElementById('emp-role').value.trim(),
+      joiningDate: document.getElementById('emp-joining-date').value,
+    },
+    compliance: {
+      pfApplicable: document.getElementById('emp-pf-applicable').checked,
+      pfNumber: document.getElementById('emp-pf-number').value.trim(),
+      esiApplicable: document.getElementById('emp-esi-applicable').checked,
+      esiNumber: document.getElementById('emp-esi-number').value.trim(),
+      salaryRange: document.getElementById('emp-salary-range').value.trim(),
+      contractorName: document.getElementById('emp-contractor').value.trim(),
+    },
+    safety: {
+      ppeRequired: getSelectedValues('.emp-ppe'),
+      trainingCompleted: getSelectedValues('.emp-training'),
+      medicalFitnessStatus: document.getElementById('emp-medical-status').textContent,
+    },
+    documents: {
+      idProof: document.getElementById('emp-doc-idproof').files?.[0]?.name || '',
+      pfRegistrationProof: document.getElementById('emp-doc-pf').files?.[0]?.name || '',
+      esiCard: document.getElementById('emp-doc-esi').files?.[0]?.name || '',
+      trainingCertificates: document.getElementById('emp-doc-training').files?.[0]?.name || '',
+    },
+  };
+
+  console.log('Employee created payload:', payload);
+  closeAddEmployeeDrawer();
+  showToast('Employee created successfully', 'success');
+}
+
+function openAudit(id) {
+  const a = DATA.audits.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('drawer-title').textContent = a.title;
+  document.getElementById('drawer-sub').textContent = a.type + ' · ' + a.freq + ' · ' + a.plant;
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="margin-bottom:16px"><span class="badge ${a.status==='due'?'badge-due':a.status==='completed'?'badge-ok':'badge-pending'}">${a.status.toUpperCase()}</span></div>
+    ${[['Type',a.type],['Plant',a.plant],['Frequency',a.freq],['Next Due',a.due],['Questions',a.questions.length+' items']].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">Sections</div>
+    ${[...new Set(a.questions.map(q=>q.section))].map(s=>`<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;font-size:13px;font-weight:500;color:var(--slate)">📌 ${s}</div>`).join('')}
+  `;
+  document.getElementById('drawer-footer').innerHTML = `
+    ${a.questions.length>0 ? `<button class="btn btn-primary" onclick="closeDrawer();openChecklist('${a.id}')">▶ Start checklist</button>` : ''}
+    <button class="btn btn-secondary" onclick="showToast('Assigned to Ravi Desai','success')">👤 Assign</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Close</button>`;
+  openDrawer();
+}
+
+function openChecklist(id) {
+  const a = DATA.audits.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('modal-title').textContent = a.title;
+  document.getElementById('modal-sub').textContent   = a.type + ' · ' + a.plant + ' · March 2026';
+
+  const sections = [...new Set(a.questions.map(q => q.section))];
+  let html = '';
+  let qIdx = 0;
+  sections.forEach(sec => {
+    const qs = a.questions.filter(q => q.section === sec);
+    html += `<div class="checklist-section"><div class="checklist-section-title">${sec}</div>`;
+    qs.forEach(q => {
+      html += `
+      <div class="checklist-item" id="cq${qIdx}">
+        <div class="checklist-question">${q.q}</div>
+        <div class="checklist-actions">
+          <button class="check-btn yes" onclick="answerQ(${qIdx},'yes',this)" title="Yes / Compliant">Y</button>
+          <button class="check-btn no"  onclick="answerQ(${qIdx},'no',this)"  title="No / Non-compliant">N</button>
+          <button class="check-btn na"  onclick="answerQ(${qIdx},'na',this)"  title="Not Applicable">NA</button>
+        </div>
+      </div>`;
+      qIdx++;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="checklist-step-indicator">
+      <div class="checklist-step-tabs">
+        <div class="checklist-step-tab active" id="checklist-tab-1">Step 1: Questions</div>
+        <div class="checklist-step-tab" id="checklist-tab-2">Step 2: Evidence &amp; Output</div>
+      </div>
+    </div>
+    <div class="checklist-step active" id="checklist-step-1">${html}</div>
+    <div class="checklist-step" id="checklist-step-2">
+      <div class="step-section-title">Evidence &amp; Output</div>
+      <div class="evidence-grid">
+        <div class="evidence-field">
+          <h4>Require Photo Proof</h4>
+          <p>Upload images only. Multiple files allowed.</p>
+          <label class="evidence-toggle"><input type="checkbox" id="photo-required" checked /> Photo proof required</label>
+          <input id="photo-upload" type="file" accept="image/*" multiple onchange="updateEvidenceMeta('photo')" />
+          <div class="file-meta" id="photo-meta">No files selected</div>
+        </div>
+        <div class="evidence-field">
+          <h4>Require Document Upload</h4>
+          <p>Upload supporting files like PDF, DOC, DOCX.</p>
+          <label class="evidence-toggle"><input type="checkbox" id="doc-required" checked /> Document upload required</label>
+          <input id="doc-upload" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" multiple onchange="updateEvidenceMeta('doc')" />
+          <div class="file-meta" id="doc-meta">No files selected</div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('checklist-modal').classList.add('open');
+  window.totalQs = a.questions.length;
+  window.answeredQs = {};
+  window.checklistStep = 1;
+  updateModalScore();
+  renderChecklistFooter();
+}
+
+function answerQ(idx, ans, btn) {
+  const row = document.getElementById('cq' + idx);
+  row.querySelectorAll('.check-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  window.answeredQs[idx] = ans;
+  updateModalScore();
+}
+
+function updateModalScore() {
+  const total = window.totalQs || 0;
+  const answered = Object.keys(window.answeredQs || {}).length;
+  const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
+  document.getElementById('modal-score').innerHTML = `
+    <span>${answered} / ${total} answered</span>
+    ${nos > 0 ? `<span style="color:var(--red);margin-left:12px">⚠ ${nos} NC${nos>1?'s':''} found</span>` : ''}`;
+}
+
+function goChecklistStep(step) {
+  window.checklistStep = step;
+  document.getElementById('checklist-step-1')?.classList.toggle('active', step === 1);
+  document.getElementById('checklist-step-2')?.classList.toggle('active', step === 2);
+  document.getElementById('checklist-tab-1')?.classList.toggle('active', step === 1);
+  document.getElementById('checklist-tab-2')?.classList.toggle('active', step === 2);
+  renderChecklistFooter();
+}
+
+function renderChecklistFooter() {
+  const actionNode = document.getElementById('modal-actions');
+  if (!actionNode) return;
+  if ((window.checklistStep || 1) === 1) {
+    actionNode.innerHTML = `
+      <button class="btn btn-secondary" onclick="closeModal()">Save draft</button>
+      <button class="btn btn-primary" onclick="goToEvidenceStep()">Next</button>`;
+    return;
+  }
+  actionNode.innerHTML = `
+    <button class="btn btn-secondary" onclick="goChecklistStep(1)">Back</button>
+    <button class="btn btn-primary" onclick="submitChecklist()">Submit Checklist</button>`;
+}
+
+function goToEvidenceStep() {
+  const answered = Object.keys(window.answeredQs || {}).length;
+  const total = window.totalQs || 0;
+  if (answered < total) {
+    showToast('Please answer all checklist questions before continuing', 'warning');
+    return;
+  }
+  goChecklistStep(2);
+}
+
+function updateEvidenceMeta(type) {
+  const input = document.getElementById(type === 'photo' ? 'photo-upload' : 'doc-upload');
+  const meta = document.getElementById(type === 'photo' ? 'photo-meta' : 'doc-meta');
+  if (!input || !meta) return;
+  const count = input.files?.length || 0;
+  meta.textContent = count ? `${count} file${count !== 1 ? 's' : ''} selected` : 'No files selected';
+}
+
+function closeModal() {
+  document.getElementById('checklist-modal').classList.remove('open');
+}
+
+function submitChecklist() {
+  const answered = Object.keys(window.answeredQs || {}).length;
+  const total    = window.totalQs || 1;
+  if (answered < total) {
+    showToast('Please answer all checklist questions before submitting', 'warning');
+    goChecklistStep(1);
+    return;
+  }
+  const photoRequired = document.getElementById('photo-required')?.checked;
+  const docRequired = document.getElementById('doc-required')?.checked;
+  const photoCount = document.getElementById('photo-upload')?.files?.length || 0;
+  const docCount = document.getElementById('doc-upload')?.files?.length || 0;
+  if (photoRequired && photoCount < 1) {
+    showToast('Photo proof is required before submitting', 'warning');
+    return;
+  }
+  if (docRequired && docCount < 1) {
+    showToast('Document upload is required before submitting', 'warning');
+    return;
+  }
+  const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
+  closeModal();
+  showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
+  if (nos > 0) {
+    DATA.actions.unshift({
+      id: Date.now(), title: `Fix ${nos} audit finding${nos>1?'s':''}`, linked:'Audit submission',
+      owner:'AR', due:'2026-03-31', status:'open', priority:'high'
+    });
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ACTIONS
+───────────────────────────────────────────────────────── */
+function actions() {
+  const overdue = DATA.actions.filter(a => a.status === 'overdue');
+  const open    = DATA.actions.filter(a => a.status === 'open');
+  const done    = DATA.actions.filter(a => a.status === 'done');
+
+  function actionCard(a) {
+    return `
+    <div class="action-card ${a.priority}" onclick="showActionDetail(${a.id})">
+      <div class="action-title">${a.title}</div>
+      <div class="action-linked">🔗 ${a.linked}</div>
+      <div class="action-footer">
+        <div class="action-avatar">${a.owner}</div>
+        <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()}</span>
+        <div class="action-due">${a.due}</div>
+      </div>
+    </div>`;
+  }
+
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Actions & Tasks</div>
+        <div class="page-sub">${DATA.actions.filter(a=>a.status!=='done').length} open · ${done.length} done</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:4px;background:var(--surface-2);border-radius:10px;padding:4px">
+          <div class="people-tab active" onclick="this.parentElement.querySelectorAll('.people-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Kanban</div>
+          <div class="people-tab" onclick="showPage('actions');this.parentElement.querySelectorAll('.people-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">List</div>
+        </div>
+        <button class="btn btn-primary" onclick="showToast('Create action form — coming soon','info')">+ Add action</button>
+      </div>
+    </div>
+
+    <div class="kanban">
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--red-l)"></div>
+          <div class="kanban-col-title">Overdue</div>
+          <div class="kanban-count badge-red">${overdue.length}</div>
+        </div>
+        ${overdue.map(a => actionCard(a)).join('')}
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--amber-l)"></div>
+          <div class="kanban-col-title">Open</div>
+          <div class="kanban-count badge-amber">${open.length}</div>
+        </div>
+        ${open.map(a => actionCard(a)).join('')}
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--green-l)"></div>
+          <div class="kanban-col-title">Completed</div>
+          <div class="kanban-count badge-green">${done.length}</div>
+        </div>
+        ${done.map(a => actionCard(a)).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function showActionDetail(id) {
+  const a = DATA.actions.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('drawer-title').textContent = a.title;
+  document.getElementById('drawer-sub').textContent = 'Action · ' + a.priority + ' priority';
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="margin-bottom:16px">
+      <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()} PRIORITY</span>
+    </div>
+    ${[['Linked to',a.linked],['Assigned to',a.owner],['Due date',a.due],['Status',a.status.toUpperCase()]].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="upload-zone" onclick="showToast('Upload evidence for this action','info')">
+      <div class="upload-zone-icon">📎</div>
+      <div class="upload-zone-text">Attach evidence / photo<br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, PNG up to 20MB</span></div>
+    </div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="markActionDone(${a.id})">✅ Mark complete</button>
+    <button class="btn btn-secondary" onclick="showToast('Reminder sent to ' + '${a.owner}','success')">📩 Remind</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Close</button>`;
+  openDrawer();
+}
+
+function markActionDone(id) {
+  const a = DATA.actions.find(x => x.id === id);
+  if (a) a.status = 'done';
+  closeDrawer();
+  showToast('✅ Action marked complete', 'success');
+  showPage('actions');
+}
+
+/* ─────────────────────────────────────────────────────────
+   PEOPLE & TRAINING
+───────────────────────────────────────────────────────── */
+const trainings = ['Induction','PPE','Hot Work','Crane OHC','Fire Safety','First Aid','Foundry Safety'];
+
+function people() {
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">People & Training</div>
+        <div class="page-sub">${DATA.people.length} employees · PF/ESI tracking enabled</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddEmployeeDrawer()">+ Add employee</button>
+    </div>
+
+    <div class="people-tabs">
+      <div class="people-tab active" id="tab-employees" onclick="switchPeopleTab('employees')">Employee Register</div>
+      <div class="people-tab" id="tab-training" onclick="switchPeopleTab('training')">Training Matrix</div>
+      <div class="people-tab" id="tab-pfesi" onclick="switchPeopleTab('pfesi')">PF / ESI Status</div>
+    </div>
+
+    <div id="people-content">
+      ${peopleEmployees()}
+    </div>
+  </div>`;
+}
+
+function switchPeopleTab(tab) {
+  document.querySelectorAll('.people-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const map = { employees: peopleEmployees, training: peopleTraining, pfesi: peoplePFESI };
+  document.getElementById('people-content').innerHTML = (map[tab] || peopleEmployees)();
+}
+
+function peopleEmployees() {
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead><tr>
+        <th>Employee</th><th>Dept</th><th>Role</th><th>PF</th><th>ESI</th><th>UAN</th><th>Last Medical</th><th>Trainings</th>
+      </tr></thead>
+      <tbody>
+        ${DATA.people.map(p => `
+        <tr onclick="showPersonDetail('${p.id}')">
+          <td class="cell-primary">${p.name}<br/><span class="cell-muted" style="font-family:var(--font-m)">${p.id}</span></td>
+          <td>${p.dept}</td>
+          <td style="font-size:12px">${p.role}</td>
+          <td>${p.pf ? '<span style="color:var(--green-d)">✓</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+          <td>${p.esi ? '<span style="color:var(--green-d)">✓</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+          <td class="cell-mono">${p.uan || '<span style="color:var(--red)">⚠ Missing</span>'}</td>
+          <td class="cell-mono" style="font-size:11px">${p.medical}</td>
+          <td><span class="badge badge-info">${p.trainings.length} done</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function peopleTraining() {
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <div class="matrix-scroll">
+      <table class="matrix-table">
+        <thead><tr>
+          <th style="text-align:left;padding-left:16px;min-width:140px">Employee</th>
+          ${trainings.map(t => `<th>${t}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${DATA.people.map(p => `
+          <tr>
+            <td style="padding-left:16px"><div style="font-size:13px;font-weight:600;color:var(--charcoal)">${p.name}</div><div style="font-size:10px;color:var(--muted);font-family:var(--font-m)">${p.dept}</div></td>
+            ${trainings.map(t => {
+              const done = p.trainings.includes(t);
+              return `<td><div class="matrix-cell ${done?'mc-done':'mc-miss'}" title="${done?'Completed':'Not done'}">${done?'✅':'❌'}</div></td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function peoplePFESI() {
+  return `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    ${[
+      {title:'PF Status', icon:'💼', ok:DATA.people.filter(p=>p.pf).length, issue:DATA.people.filter(p=>p.pf&&!p.uan).length, label:'employees with PF applicable', warn:'UAN missing'},
+      {title:'ESI Status', icon:'🏥', ok:DATA.people.filter(p=>p.esi).length, issue:DATA.people.filter(p=>p.esi&&!p.ip).length, label:'employees with ESI applicable', warn:'IP number missing'},
+    ].map(s => `
+    <div class="kpi-tile ${s.issue?'warn':'ok'}">
+      <div class="kpi-icon">${s.icon}</div>
+      <div class="kpi-num">${s.ok}</div>
+      <div class="kpi-label">${s.label}</div>
+      ${s.issue ? `<div class="kpi-sub" style="color:var(--red)">⚠ ${s.issue} ${s.warn}</div>` : '<div class="kpi-sub">All records complete</div>'}
+    </div>`).join('')}
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead><tr><th>Employee</th><th>PF Applicable</th><th>UAN</th><th>ESI Applicable</th><th>IP Number</th><th>Status</th></tr></thead>
+      <tbody>
+        ${DATA.people.map(p => `
+        <tr>
+          <td class="cell-primary">${p.name}</td>
+          <td>${p.pf ? '<span style="color:var(--green-d)">✓ Yes</span>' : '—'}</td>
+          <td class="cell-mono">${p.uan || (p.pf ? '<span style="color:var(--red);font-size:11px">⚠ Missing</span>' : '—')}</td>
+          <td>${p.esi ? '<span style="color:var(--green-d)">✓ Yes</span>' : '—'}</td>
+          <td class="cell-mono">${p.ip || (p.esi ? '<span style="color:var(--red);font-size:11px">⚠ Missing</span>' : '—')}</td>
+          <td><span class="badge ${(!p.pf||p.uan)&&(!p.esi||p.ip)?'badge-ok':'badge-overdue'}">${(!p.pf||p.uan)&&(!p.esi||p.ip)?'Complete':'⚠ Action needed'}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function showPersonDetail(id) {
+  const p = DATA.people.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('drawer-title').textContent = p.name;
+  document.getElementById('drawer-sub').textContent = p.role + ' · ' + p.dept;
+  document.getElementById('drawer-body').innerHTML = `
+    ${[['Employee ID',p.id],['Department',p.dept],['Role',p.role],['PF Applicable',p.pf?'Yes':'No'],['UAN',p.uan||'<span style="color:var(--red)">⚠ Missing</span>'],['ESI Applicable',p.esi?'Yes':'No'],['IP Number',p.ip||'—'],['Last Medical',p.medical]].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">Training Completed</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${trainings.map(t => `<span class="badge ${p.trainings.includes(t)?'badge-ok':'badge-pending'}">${p.trainings.includes(t)?'✓':''} ${t}</span>`).join('')}
+    </div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" onclick="showToast('Training assignment — coming soon','info')">+ Assign training</button>
+    <button class="btn btn-secondary" onclick="showToast('Employee record updated','success')">💾 Edit record</button>`;
+  openDrawer();
+}
+
+/* ─────────────────────────────────────────────────────────
+   DOCUMENTS
+───────────────────────────────────────────────────────── */
+let activeFolder = 'All';
+const folders = ['All','Licences','PF/ESI','Audits','OEM','Safety','Accidents'];
+
+function docs() {
+  const filteredDocs = activeFolder === 'All' ? DATA.docs : DATA.docs.filter(d => d.folder === activeFolder);
+  const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
+
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Documents & Evidence</div>
+        <div class="page-sub">${DATA.docs.length} files · Organised by plant and category</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')"><span class="search-icon" aria-hidden="true" style="margin-right:6px"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>Search</button>
+        <button class="btn btn-primary" onclick="showToast('Upload document — select file','info')">+ Upload</button>
+      </div>
+    </div>
+
+    <div class="doc-grid">
+      <div class="doc-tree">
+        ${folders.map(f => `
+        <div class="doc-tree-item ${activeFolder===f?'active':''} ${f!=='All'?'sub':''}" onclick="switchFolder('${f}')">
+          <span>${f==='All'?'🗂':f==='Licences'?'📋':f==='PF/ESI'?'💼':f==='Audits'?'✅':f==='OEM'?'🏭':f==='Safety'?'🦺':'⚠'}</span>
+          ${f}
+          <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?DATA.docs.length:DATA.docs.filter(d=>d.folder===f).length}</span>
+        </div>`).join('')}
+      </div>
+
+      <div class="doc-list">
+        ${filteredDocs.map(d => `
+        <div class="doc-item" onclick="showDocDetail('${d.id}')">
+          <div class="doc-icon">${typeIcons[d.type]||'📄'}</div>
+          <div style="flex:1">
+            <div class="doc-name">${d.name}</div>
+            <div class="doc-meta">${d.folder} · ${d.size} · ${d.date}${d.expiry!=='—'?' · Expires: '+d.expiry:''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge ${d.tag==='overdue'?'badge-overdue':d.tag==='due'?'badge-due':d.tag==='expired'?'badge-overdue':'badge-ok'}">${d.tag.toUpperCase()}</span>
+            <div class="doc-actions">
+              <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();showToast('Downloading '+this.closest('.doc-item').querySelector('.doc-name').textContent,'info')">↓</button>
+            </div>
+          </div>
+        </div>`).join('')}
+
+        <div class="upload-zone" onclick="showToast('Upload document — select file','info')">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-text">Drop files here or <strong>click to upload</strong><br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, XLSX up to 50MB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function switchFolder(folder) {
+  activeFolder = folder;
+  showPage('docs');
+}
+
+function showDocDetail(id) {
+  const d = DATA.docs.find(x => x.id === id);
+  if (!d) return;
+  const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
+  document.getElementById('drawer-title').textContent = d.name;
+  document.getElementById('drawer-sub').textContent = d.folder + ' · ' + d.size;
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="text-align:center;margin:20px 0">
+      <div style="font-size:64px">${typeIcons[d.type]||'📄'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--font-m)">${d.name}</div>
+    </div>
+    <div class="divider"></div>
+    ${[['Folder',d.folder],['File size',d.size],['Uploaded',d.date],['Expiry',d.expiry],['Status','<span class="badge '+( d.tag==='ok'?'badge-ok':d.tag==='due'?'badge-due':'badge-overdue')+'">'+d.tag.toUpperCase()+'</span>']].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:12px">Version history</div>
+    <div class="history-item"><div class="history-dot" style="background:var(--green-l)"></div><div><div class="history-date">Current version · ${d.date}</div><div class="history-text">${d.name}</div></div></div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-navy" onclick="showToast('Downloading '+' — '+'${d.name}','info')">↓ Download</button>
+    <button class="btn btn-secondary" onclick="showToast('Document replaced — upload new version','info')">⬆ Replace</button>
+    <button class="btn btn-danger btn-sm" onclick="showToast('Document archived','warning')">🗑 Archive</button>`;
+  openDrawer();
+}
+
+/* ─────────────────────────────────────────────────────────
+   SETTINGS
+───────────────────────────────────────────────────────── */
+function settings() {
+  return `
+  <div class="fade-up">
+    <div class="page-header">
+      <div class="page-title">Settings</div>
+      <div class="page-sub">Manage plants, frameworks, users and notifications</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      ${[
+        {icon:'🏭',title:'Plants & Locations',sub:'Chakan MIDC · 1 plant · Add new plant',btn:'Manage plants'},
+        {icon:'⚖️',title:'Compliance Frameworks',sub:'33 obligations active · Maharashtra templates',btn:'Edit frameworks'},
+        {icon:'👥',title:'Users & Roles',sub:'4 users · Admin, Manager, Checker, Viewer',btn:'Manage users'},
+        {icon:'🔔',title:'Notifications & Reminders',sub:'Email + WhatsApp · 60/30/15 day lead times',btn:'Configure'},
+        {icon:'📊',title:'Report Templates',sub:'OEM pack, Statutory report, PF/ESI summary',btn:'Edit templates'},
+        {icon:'🔌',title:'Integrations',sub:'WhatsApp, Email (SendGrid), Storage (S3)',btn:'Connect'},
+      ].map(s => `
+      <div class="card" style="display:flex;align-items:flex-start;gap:16px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(34,51,59,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${s.icon}</div>
+        <div style="flex:1">
+          <div class="card-title">${s.title}</div>
+          <div class="card-sub" style="margin-top:3px;margin-bottom:12px">${s.sub}</div>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('${s.btn} — coming soon','info')">${s.btn} →</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   DRAWER UTILS
+───────────────────────────────────────────────────────── */
+function openDrawer() {
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+/* ─────────────────────────────────────────────────────────
+   NOTIFICATIONS
+───────────────────────────────────────────────────────── */
+function toggleNotif() {
+  document.getElementById('notif-panel').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notif-panel');
+  const btn   = e.target.closest('.topbar-icon-btn');
+  if (!panel.contains(e.target) && !btn) panel.classList.remove('open');
+});
+
+/* ─────────────────────────────────────────────────────────
+   TOAST
+───────────────────────────────────────────────────────── */
+function showToast(msg, type='info') {
+  const icons = { success:'✅', warning:'⚠️', error:'❌', info:'ℹ️' };
+  const tc = document.getElementById('toast-container');
+  const t  = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ─────────────────────────────────────────────────────────
+   EXPORT
+───────────────────────────────────────────────────────── */
+function exportReport() {
+  showToast('📤 Generating statutory compliance report…','info');
+  setTimeout(()=>showToast('✅ Report exported: CompliOS_Statutory_Mar2026.pdf','success'),1800);
+}
+
+/* ─────────────────────────────────────────────────────────
+   GLOBAL SEARCH
+───────────────────────────────────────────────────────── */
+function globalSearch(q) {
+  activeSearchQuery = (q || '').trim();
+  const tbody = document.getElementById('register-tbody');
+  if (tbody) tbody.innerHTML = renderRegisterRows(getRegisterRows());
+  showPage('register');
+}
+
+/* ─────────────────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────────────────── */
+// Start with onboarding, then show dashboard after
+// (modal auto-triggers, dashboard shown after completion)
+document.getElementById('new-freq').addEventListener('change', updateCustomFrequencyFields);
+resetCreateChecklistForm();
+
+const addEmployeeFormNode = document.getElementById('add-employee-form');
+if (addEmployeeFormNode) {
+  addEmployeeFormNode.addEventListener('input', updateEmployeeStepUI);
+  addEmployeeFormNode.addEventListener('change', updateEmployeeStepUI);
+}
+resetAddEmployeeForm();
+</script>
+</body>
+</html>
+
   --navy-light:  #C6AC8F;
   --teal:        #5E503F;
   --orange:      #C6AC8F;
