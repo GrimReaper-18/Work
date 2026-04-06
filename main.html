@@ -2096,17 +2096,17 @@ const DATA = {
     { id:'wr',    name:'Workmen Register (Form A)', cat:'Statutory',   law:'Factories Act 1948',  plant:'Chakan MIDC', owner:'Priya Nair', freq:'Ongoing', due:'Ongoing',    status:'ok',      evidence:true,  daysLeft:999, fine:'₹10,000',   portal:'#' },
   ],
   actions: [
-    { id:1, title:'Renew MPCB Consent to Operate', linked:'MPCB Overdue', owner:'AR', due:'2026-03-20', status:'overdue', priority:'high' },
-    { id:2, title:'Upload PF challan for March',    linked:'PF Filing',     owner:'PN', due:'2026-03-15', status:'overdue', priority:'high' },
-    { id:3, title:'Upload ESI challan for March',   linked:'ESI Filing',    owner:'PN', due:'2026-03-15', status:'overdue', priority:'high' },
-    { id:4, title:'Repair ladle pre-heat burner',   linked:'Foundry Audit', owner:'SP', due:'2026-03-25', status:'open',    priority:'high' },
-    { id:5, title:'Replace safety shoes — 3 workers',linked:'PPE Audit',   owner:'RD', due:'2026-03-28', status:'open',    priority:'med' },
-    { id:6, title:'Submit Fire NOC renewal form',   linked:'Fire NOC',      owner:'RD', due:'2026-04-01', status:'open',    priority:'med' },
-    { id:7, title:'Upload ISO 45001 evidence pack', linked:'ISO 45001 Audit',owner:'AR',due:'2026-04-10', status:'open',    priority:'med' },
-    { id:8, title:'Update DISH Form 11 drawings',   linked:'Form 11',       owner:'SP', due:'2026-04-15', status:'open',    priority:'low' },
-    { id:9, title:'Conduct Q1 safety induction',    linked:'Training Matrix',owner:'RD',due:'2026-03-31', status:'open',    priority:'low' },
-    { id:10,title:'Archive 2025 OEM audit records', linked:'Documents',     owner:'AR', due:'2026-04-30', status:'done',    priority:'low' },
-    { id:11,title:'Factory licence renewal package',linked:'Factory Licence',owner:'PN',due:'2026-05-01', status:'done',    priority:'low' },
+    { id:1, title:'Renew MPCB Consent to Operate', linked:'MPCB Overdue', owner:'AR', dueDate:'2026-03-20', status:'overdue', priority:'high', type:'action' },
+    { id:2, title:'Upload PF challan for March',    linked:'PF Filing',     owner:'PN', dueDate:'2026-03-15', status:'overdue', priority:'high', type:'action' },
+    { id:3, title:'Upload ESI challan for March',   linked:'ESI Filing',    owner:'PN', dueDate:'2026-03-15', status:'overdue', priority:'high', type:'action' },
+    { id:4, title:'Repair ladle pre-heat burner',   linked:'Foundry Audit', owner:'SP', dueDate:'2026-03-25', status:'open',    priority:'high', type:'action' },
+    { id:5, title:'Replace safety shoes — 3 workers',linked:'PPE Audit',   owner:'RD', dueDate:'2026-03-28', status:'open',    priority:'med', type:'action' },
+    { id:6, title:'Submit Fire NOC renewal form',   linked:'Fire NOC',      owner:'RD', dueDate:'2026-04-01', status:'open',    priority:'med', type:'action' },
+    { id:7, title:'Upload ISO 45001 evidence pack', linked:'ISO 45001 Audit',owner:'AR',dueDate:'2026-04-10', status:'open',    priority:'med', type:'action' },
+    { id:8, title:'Update DISH Form 11 drawings',   linked:'Form 11',       owner:'SP', dueDate:'2026-04-15', status:'open',    priority:'low', type:'action' },
+    { id:9, title:'Conduct Q1 safety induction',    linked:'Training Matrix',owner:'RD',dueDate:'2026-03-31', status:'open',    priority:'low', type:'action' },
+    { id:10,title:'Archive 2025 OEM audit records', linked:'Documents',     owner:'AR', dueDate:'2026-04-30', status:'completed', priority:'low', type:'action' },
+    { id:11,title:'Factory licence renewal package',linked:'Factory Licence',owner:'PN',dueDate:'2026-05-01', status:'completed', priority:'low', type:'action' },
   ],
   people: [
     { id:'P001', name:'Ramesh Kumar',   dept:'Production',  role:'Supervisor',  pf:true,  esi:true,  uan:'100234567890', ip:'1234567890', medical:'2025-10-01', trainings:['Induction','PPE','Hot Work'] },
@@ -2174,6 +2174,57 @@ const DATA = {
     { id:'D010', name:'Bajaj OEM Audit Pack 2025',       folder:'OEM',       type:'zip',   size:'18 MB',  date:'2025-11-20', expiry:'—',          tag:'ok' },
   ],
 };
+
+const TASK_STATUS = {
+  OPEN: 'open',
+  COMPLETED: 'completed',
+  OVERDUE: 'overdue',
+};
+
+function toInitials(name = '') {
+  return String(name)
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() || '')
+    .join('') || 'NA';
+}
+
+function normalizeTask(task) {
+  const status = task.status === 'done' ? TASK_STATUS.COMPLETED : task.status;
+  return {
+    ...task,
+    type: task.type || 'action',
+    dueDate: task.dueDate || task.due || '',
+    status,
+    assignedTo: task.assignedTo || task.owner || '',
+  };
+}
+
+DATA.actions = DATA.actions.map(normalizeTask);
+
+function refreshOverdueTasks() {
+  const now = new Date();
+  DATA.actions = DATA.actions.map((task) => {
+    const nextTask = normalizeTask(task);
+    if (nextTask.status === TASK_STATUS.COMPLETED) return nextTask;
+    if (!nextTask.dueDate) return nextTask;
+    const dueDate = new Date(nextTask.dueDate);
+    if (Number.isNaN(dueDate.getTime())) return nextTask;
+    if (dueDate < now) return { ...nextTask, status: TASK_STATUS.OVERDUE };
+    return { ...nextTask, status: TASK_STATUS.OPEN };
+  });
+}
+
+function getDueDateFromFrequency(freq) {
+  const base = new Date();
+  const due = new Date(base);
+  if (freq === 'Daily') due.setDate(due.getDate() + 1);
+  else if (freq === 'Weekly') due.setDate(due.getDate() + 7);
+  else if (freq === 'Monthly') due.setMonth(due.getMonth() + 1);
+  else if (freq === 'Quarterly') due.setMonth(due.getMonth() + 3);
+  return due.toISOString().slice(0, 10);
+}
 
 /* ─────────────────────────────────────────────────────────
    ONBOARDING
@@ -2307,7 +2358,8 @@ function dashboard() {
   const over  = DATA.register.filter(r => r.status === 'overdue').length;
   const due   = DATA.register.filter(r => r.status === 'due').length;
   const ok    = DATA.register.filter(r => r.status === 'ok').length;
-  const openA = DATA.actions.filter(a => a.status !== 'done').length;
+  refreshOverdueTasks();
+  const openA = DATA.actions.filter(a => a.status !== TASK_STATUS.COMPLETED).length;
 
   return `
   <div class="fade-up">
@@ -2813,20 +2865,50 @@ function submitCreateChecklist(event) {
   }
 
   const title = document.getElementById('new-title').value.trim();
-  const type = document.getElementById('new-type').value;
+  const category = document.getElementById('new-type').value;
   const freq = document.getElementById('new-freq').value;
   const plant = document.getElementById('new-location').value;
+  const department = document.getElementById('new-department').value;
+  const assignedToRole = document.getElementById('new-assigned-to').value;
+  const assignedEmployeeId = document.getElementById('new-assigned-employee-id').value;
+  const customDueDate = document.getElementById('new-custom-due-date').value;
+  const checklistId = `A${String(Date.now()).slice(-6)}`;
+  const assignedEmployee = DATA.people.find((person) => person.id === assignedEmployeeId);
+  const assignedToName = assignedEmployee?.name || assignedToRole;
+  const dueDate = freq === 'Custom' ? customDueDate : getDueDateFromFrequency(freq);
 
   DATA.audits.unshift({
-    id: `A${String(Date.now()).slice(-6)}`,
-    type,
+    id: checklistId,
+    type: category,
     title,
     freq,
-    due: freq === 'Daily' ? 'Today' : freq === 'Weekly' ? 'This week' : freq === 'Monthly' ? 'This month' : 'Scheduled',
+    due: dueDate,
     status: 'upcoming',
     plant,
+    department,
+    assignedToRole,
+    assignedEmployeeId,
     questions: [],
   });
+
+  const newTask = normalizeTask({
+    id: Date.now(),
+    title,
+    type: 'checklist',
+    category,
+    plant,
+    department,
+    assignedTo: toInitials(assignedToName),
+    assignedToName,
+    owner: toInitials(assignedToName),
+    dueDate,
+    status: TASK_STATUS.OPEN,
+    checklistId,
+    priority: 'med',
+    linked: `${category} Checklist`,
+  });
+  DATA.actions = [...DATA.actions, newTask];
+  refreshOverdueTasks();
 
   resetCreateChecklistForm();
   closeCreateChecklist();
@@ -3016,6 +3098,7 @@ function openAudit(id) {
 function openChecklist(id) {
   const a = DATA.audits.find(x => x.id === id);
   if (!a) return;
+  window.activeChecklistId = id;
   document.getElementById('modal-title').textContent = a.title;
   document.getElementById('modal-sub').textContent   = a.type + ' · ' + a.plant + ' · March 2026';
 
@@ -3139,7 +3222,7 @@ function closeModal() {
 
 function submitChecklist() {
   const answered = Object.keys(window.answeredQs || {}).length;
-  const total    = window.totalQs || 1;
+  const total    = window.totalQs || 0;
   if (answered < total) {
     showToast('Please answer all checklist questions before submitting', 'warning');
     goChecklistStep(1);
@@ -3158,33 +3241,51 @@ function submitChecklist() {
     return;
   }
   const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
+  const activeChecklistId = window.activeChecklistId;
+  if (activeChecklistId) {
+    const targetAudit = DATA.audits.find(audit => audit.id === activeChecklistId);
+    if (targetAudit) targetAudit.status = 'completed';
+    DATA.actions = DATA.actions.map(task => {
+      const normalizedTask = normalizeTask(task);
+      return normalizedTask.checklistId === activeChecklistId
+        ? { ...normalizedTask, status: TASK_STATUS.COMPLETED }
+        : normalizedTask;
+    });
+  }
   closeModal();
   showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
   if (nos > 0) {
     DATA.actions.unshift({
       id: Date.now(), title: `Fix ${nos} audit finding${nos>1?'s':''}`, linked:'Audit submission',
-      owner:'AR', due:'2026-03-31', status:'open', priority:'high'
+      owner:'AR', assignedTo:'AR', dueDate:'2026-03-31', status:TASK_STATUS.OPEN, priority:'high', type:'action'
     });
   }
+  refreshOverdueTasks();
 }
 
 /* ─────────────────────────────────────────────────────────
    ACTIONS
 ───────────────────────────────────────────────────────── */
 function actions() {
-  const overdue = DATA.actions.filter(a => a.status === 'overdue');
-  const open    = DATA.actions.filter(a => a.status === 'open');
-  const done    = DATA.actions.filter(a => a.status === 'done');
+  refreshOverdueTasks();
+  const overdue = DATA.actions.filter(a => a.status === TASK_STATUS.OVERDUE);
+  const open    = DATA.actions.filter(a => a.status === TASK_STATUS.OPEN);
+  const done    = DATA.actions.filter(a => a.status === TASK_STATUS.COMPLETED);
 
   function actionCard(a) {
+    const categoryLabel = a.category || a.linked || 'General';
+    const assignee = a.assignedTo || a.owner || 'NA';
+    const priorityPill = a.priority ? `<span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()}</span>` : '';
+    const dueDate = a.dueDate || a.due || '—';
+    const onClickHandler = a.type === 'checklist' ? `openChecklist('${a.checklistId}')` : `showActionDetail(${a.id})`;
     return `
-    <div class="action-card ${a.priority}" onclick="showActionDetail(${a.id})">
+    <div class="action-card ${a.priority || 'low'}" onclick="${onClickHandler}">
       <div class="action-title">${a.title}</div>
-      <div class="action-linked">🔗 ${a.linked}</div>
+      <div class="action-linked">🏷 ${categoryLabel}</div>
       <div class="action-footer">
-        <div class="action-avatar">${a.owner}</div>
-        <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()}</span>
-        <div class="action-due">${a.due}</div>
+        <div class="action-avatar">${assignee}</div>
+        ${priorityPill}
+        <div class="action-due">${dueDate}</div>
       </div>
     </div>`;
   }
@@ -3194,7 +3295,7 @@ function actions() {
     <div class="page-header">
       <div>
         <div class="page-title">Actions & Tasks</div>
-        <div class="page-sub">${DATA.actions.filter(a=>a.status!=='done').length} open · ${done.length} done</div>
+        <div class="page-sub">${DATA.actions.filter(a=>a.status!==TASK_STATUS.COMPLETED).length} open · ${done.length} completed</div>
       </div>
       <div style="display:flex;gap:10px">
         <div style="display:flex;gap:4px;background:var(--surface-2);border-radius:10px;padding:4px">
@@ -3237,13 +3338,17 @@ function actions() {
 function showActionDetail(id) {
   const a = DATA.actions.find(x => x.id === id);
   if (!a) return;
+  if (a.type === 'checklist' && a.checklistId) {
+    openChecklist(a.checklistId);
+    return;
+  }
   document.getElementById('drawer-title').textContent = a.title;
   document.getElementById('drawer-sub').textContent = 'Action · ' + a.priority + ' priority';
   document.getElementById('drawer-body').innerHTML = `
     <div style="margin-bottom:16px">
       <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()} PRIORITY</span>
     </div>
-    ${[['Linked to',a.linked],['Assigned to',a.owner],['Due date',a.due],['Status',a.status.toUpperCase()]].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    ${[['Linked to',a.linked],['Assigned to',a.assignedTo || a.owner],['Due date',a.dueDate || a.due],['Status',a.status.toUpperCase()]].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
     <div class="divider"></div>
     <div class="upload-zone" onclick="showToast('Upload evidence for this action','info')">
       <div class="upload-zone-icon">📎</div>
@@ -3258,7 +3363,13 @@ function showActionDetail(id) {
 
 function markActionDone(id) {
   const a = DATA.actions.find(x => x.id === id);
-  if (a) a.status = 'done';
+  if (a) {
+    a.status = TASK_STATUS.COMPLETED;
+    if (a.type === 'checklist' && a.checklistId) {
+      const linkedChecklist = DATA.audits.find(audit => audit.id === a.checklistId);
+      if (linkedChecklist) linkedChecklist.status = 'completed';
+    }
+  }
   closeDrawer();
   showToast('✅ Action marked complete', 'success');
   showPage('actions');
