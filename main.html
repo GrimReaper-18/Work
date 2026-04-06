@@ -2175,6 +2175,84 @@ const DATA = {
   ],
 };
 
+const TASK_STORAGE_KEY = 'tasks';
+
+function toTaskStatus(status) {
+  if (status === 'done') return 'completed';
+  if (status === 'completed' || status === 'overdue' || status === 'open') return status;
+  return 'open';
+}
+
+function normalizeTask(task) {
+  const normalized = { ...(task || {}) };
+  normalized.status = toTaskStatus(normalized.status);
+  if (!normalized.type) normalized.type = 'action';
+  if (!normalized.dueDate && normalized.due) normalized.dueDate = normalized.due;
+  if (!normalized.due && normalized.dueDate) normalized.due = normalized.dueDate;
+  return normalized;
+}
+
+function loadTasksFromStorage() {
+  try {
+    const raw = localStorage.getItem(TASK_STORAGE_KEY);
+    if (!raw) return DATA.actions.map(normalizeTask);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DATA.actions.map(normalizeTask);
+    return parsed.map(normalizeTask);
+  } catch (error) {
+    return DATA.actions.map(normalizeTask);
+  }
+}
+
+function persistTasks() {
+  try {
+    localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(DATA.actions));
+  } catch (error) {
+    // Ignore storage errors in constrained environments.
+  }
+}
+
+function parseIsoDateOnly(value) {
+  if (typeof value !== 'string') return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function refreshTaskStatuses() {
+  const now = new Date();
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let hasStatusChange = false;
+  DATA.actions = DATA.actions.map((task) => {
+    const normalized = normalizeTask(task);
+    if (normalized.status === 'completed') return normalized;
+    const due = parseIsoDateOnly(normalized.dueDate || normalized.due);
+    if (!due) return normalized;
+    if (due < nowDay && normalized.status !== 'overdue') {
+      hasStatusChange = true;
+      return { ...normalized, status: 'overdue' };
+    }
+    if (due >= nowDay && normalized.status === 'overdue') {
+      hasStatusChange = true;
+      return { ...normalized, status: 'open' };
+    }
+    return normalized;
+  });
+  if (hasStatusChange) persistTasks();
+}
+
+function setTasks(updater) {
+  const previousTasks = Array.isArray(DATA.actions) ? DATA.actions : [];
+  const nextTasks = typeof updater === 'function' ? updater(previousTasks) : updater;
+  DATA.actions = Array.isArray(nextTasks) ? nextTasks.map(normalizeTask) : previousTasks;
+  refreshTaskStatuses();
+  persistTasks();
+}
+
+DATA.actions = loadTasksFromStorage();
+refreshTaskStatuses();
+persistTasks();
+
 /* ─────────────────────────────────────────────────────────
    ONBOARDING
 ───────────────────────────────────────────────────────── */
@@ -2311,7 +2389,7 @@ function dashboard() {
   const over  = DATA.register.filter(r => r.status === 'overdue').length;
   const due   = DATA.register.filter(r => r.status === 'due').length;
   const ok    = DATA.register.filter(r => r.status === 'ok').length;
-  const openA = DATA.actions.filter(a => a.status !== 'done').length;
+  const openA = DATA.actions.filter(a => a.status !== 'completed').length;
 
   return `
   <div class="fade-up">
@@ -2820,9 +2898,16 @@ function submitCreateChecklist(event) {
   const type = document.getElementById('new-type').value;
   const freq = document.getElementById('new-freq').value;
   const plant = document.getElementById('new-location').value;
+  const department = document.getElementById('new-department').value;
+  const assignedRole = document.getElementById('new-assigned-to').value;
+  const assignedEmployeeId = document.getElementById('new-assigned-employee-id').value;
+  const customDueDate = document.getElementById('new-custom-due-date').value;
+  const generatedChecklistId = `A${String(Date.now()).slice(-6)}`;
+  const category = type;
+  const dueDate = freq === 'Custom' ? customDueDate : '';
 
   DATA.audits.unshift({
-    id: `A${String(Date.now()).slice(-6)}`,
+    id: generatedChecklistId,
     type,
     title,
     freq,
@@ -2831,6 +2916,25 @@ function submitCreateChecklist(event) {
     plant,
     questions: [],
   });
+
+  const newTask = {
+    id: Date.now(),
+    title,
+    type: 'checklist',
+    category,
+    plant,
+    department,
+    assignedTo: assignedEmployeeId || assignedRole,
+    dueDate,
+    due: dueDate || '—',
+    status: 'open',
+    checklistId: generatedChecklistId,
+    priority: 'med',
+    linked: `Checklist · ${category}`,
+    owner: assignedEmployeeId || assignedRole || '—',
+  };
+
+  setTasks((prev) => [newTask, ...prev]);
 
   resetCreateChecklistForm();
   closeCreateChecklist();
@@ -3053,6 +3157,7 @@ function openAudit(id) {
 function openChecklist(id) {
   const a = DATA.audits.find(x => x.id === id);
   if (!a) return;
+  window.activeChecklistId = id;
   document.getElementById('modal-title').textContent = a.title;
   document.getElementById('modal-sub').textContent   = a.type + ' · ' + a.plant + ' · March 2026';
 
@@ -3195,13 +3300,23 @@ function submitChecklist() {
     return;
   }
   const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
+  const checklistId = window.activeChecklistId;
+  const checklist = DATA.audits.find((audit) => audit.id === checklistId);
+  if (checklist) checklist.status = 'completed';
+  if (checklistId) {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.checklistId === checklistId ? { ...task, status: 'completed' } : task
+      )
+    );
+  }
   closeModal();
   showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
   if (nos > 0) {
-    DATA.actions.unshift({
+    setTasks((prev) => [{
       id: Date.now(), title: `Fix ${nos} audit finding${nos>1?'s':''}`, linked:'Audit submission',
-      owner:'AR', due:'2026-03-31', status:'open', priority:'high'
-    });
+      owner:'AR', due:'2026-03-31', dueDate:'2026-03-31', status:'open', priority:'high', type:'action'
+    }, ...prev]);
   }
 }
 
@@ -3209,19 +3324,31 @@ function submitChecklist() {
    ACTIONS
 ───────────────────────────────────────────────────────── */
 function actions() {
+  refreshTaskStatuses();
   const overdue = DATA.actions.filter(a => a.status === 'overdue');
   const open    = DATA.actions.filter(a => a.status === 'open');
-  const done    = DATA.actions.filter(a => a.status === 'done');
+  const done    = DATA.actions.filter(a => a.status === 'completed');
+
+  function getInitials(value) {
+    if (!value) return '—';
+    const parts = String(value).split(/\s+/).filter(Boolean);
+    if (!parts.length) return String(value).slice(0, 2).toUpperCase();
+    return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
+  }
 
   function actionCard(a) {
+    const isChecklist = a.type === 'checklist';
+    const category = a.category || a.linked || 'General';
+    const assignedTo = a.assignedTo || a.owner || '—';
+    const dueDate = a.dueDate || a.due || '—';
     return `
     <div class="action-card ${a.priority}" onclick="showActionDetail(${a.id})">
       <div class="action-title">${a.title}</div>
-      <div class="action-linked">🔗 ${a.linked}</div>
+      <div class="action-linked">${isChecklist ? '📋' : '🔗'} ${category}</div>
       <div class="action-footer">
-        <div class="action-avatar">${a.owner}</div>
+        <div class="action-avatar">${getInitials(assignedTo)}</div>
         <span class="badge ${a.priority==='high'?'badge-overdue':a.priority==='med'?'badge-due':'badge-pending'}">${a.priority.toUpperCase()}</span>
-        <div class="action-due">${a.due}</div>
+        <div class="action-due">${dueDate}</div>
       </div>
     </div>`;
   }
@@ -3231,7 +3358,7 @@ function actions() {
     <div class="page-header">
       <div>
         <div class="page-title">Actions & Tasks</div>
-        <div class="page-sub">${DATA.actions.filter(a=>a.status!=='done').length} open · ${done.length} done</div>
+        <div class="page-sub">${DATA.actions.filter(a=>a.status!=='completed').length} open · ${done.length} done</div>
       </div>
       <div style="display:flex;gap:10px">
         <div style="display:flex;gap:4px;background:var(--surface-2);border-radius:10px;padding:4px">
@@ -3274,6 +3401,10 @@ function actions() {
 function showActionDetail(id) {
   const a = DATA.actions.find(x => x.id === id);
   if (!a) return;
+  if (a.type === 'checklist' && a.checklistId) {
+    openChecklist(a.checklistId);
+    return;
+  }
   document.getElementById('drawer-title').textContent = a.title;
   document.getElementById('drawer-sub').textContent = 'Action · ' + a.priority + ' priority';
   document.getElementById('drawer-body').innerHTML = `
@@ -3294,8 +3425,7 @@ function showActionDetail(id) {
 }
 
 function markActionDone(id) {
-  const a = DATA.actions.find(x => x.id === id);
-  if (a) a.status = 'done';
+  setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, status: 'completed' } : task)));
   closeDrawer();
   showToast('✅ Action marked complete', 'success');
   showPage('actions');
