@@ -2068,6 +2068,7 @@ body.page-exit {
 <!-- ═══════════════════════════════════════════════════════════════════
      JAVASCRIPT
 ═══════════════════════════════════════════════════════════════════ -->
+<script type="module" src="./firebase.js"></script>
 <script>
 function handleLogout() {
   if (document.body.classList.contains('page-exit')) return;
@@ -2175,7 +2176,14 @@ const DATA = {
   ],
 };
 
-const TASK_STORAGE_KEY = 'tasks';
+
+const DEFAULT_ACTIONS = DATA.actions.map((task) => ({ ...task }));
+const DEFAULT_AUDITS = DATA.audits.map((audit) => ({ ...audit, questions: Array.isArray(audit.questions) ? audit.questions.map((question) => ({ ...question })) : [] }));
+const DEFAULT_PEOPLE = DATA.people.map((person) => ({ ...person, trainings: Array.isArray(person.trainings) ? [...person.trainings] : [] }));
+
+let firebaseReady = false;
+let currentUserId = null;
+const unsubscribeHandlers = [];
 
 function toTaskStatus(status) {
   if (status === 'done') return 'completed';
@@ -2185,31 +2193,12 @@ function toTaskStatus(status) {
 
 function normalizeTask(task) {
   const normalized = { ...(task || {}) };
+  normalized.id = String(normalized.id || Date.now());
   normalized.status = toTaskStatus(normalized.status);
   if (!normalized.type) normalized.type = 'action';
   if (!normalized.dueDate && normalized.due) normalized.dueDate = normalized.due;
   if (!normalized.due && normalized.dueDate) normalized.due = normalized.dueDate;
   return normalized;
-}
-
-function loadTasksFromStorage() {
-  try {
-    const raw = localStorage.getItem(TASK_STORAGE_KEY);
-    if (!raw) return DATA.actions.map(normalizeTask);
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return DATA.actions.map(normalizeTask);
-    return parsed.map(normalizeTask);
-  } catch (error) {
-    return DATA.actions.map(normalizeTask);
-  }
-}
-
-function persistTasks() {
-  try {
-    localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(DATA.actions));
-  } catch (error) {
-    // Ignore storage errors in constrained environments.
-  }
 }
 
 function parseIsoDateOnly(value) {
@@ -2222,36 +2211,169 @@ function parseIsoDateOnly(value) {
 function refreshTaskStatuses() {
   const now = new Date();
   const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  let hasStatusChange = false;
   DATA.actions = DATA.actions.map((task) => {
     const normalized = normalizeTask(task);
     if (normalized.status === 'completed') return normalized;
     const due = parseIsoDateOnly(normalized.dueDate || normalized.due);
     if (!due) return normalized;
-    if (due < nowDay && normalized.status !== 'overdue') {
-      hasStatusChange = true;
-      return { ...normalized, status: 'overdue' };
-    }
-    if (due >= nowDay && normalized.status === 'overdue') {
-      hasStatusChange = true;
-      return { ...normalized, status: 'open' };
-    }
+    if (due < nowDay && normalized.status !== 'overdue') return { ...normalized, status: 'overdue' };
+    if (due >= nowDay && normalized.status === 'overdue') return { ...normalized, status: 'open' };
     return normalized;
   });
-  if (hasStatusChange) persistTasks();
+}
+
+function sanitizeForFirestore(record) {
+  const value = { ...record };
+  Object.keys(value).forEach((key) => {
+    if (value[key] === undefined) delete value[key];
+  });
+  return value;
+}
+
+async function seedCollectionIfEmpty(name, defaults) {
+  const sdk = window.firebaseServices;
+  if (!sdk || !currentUserId) return;
+  const queryRef = sdk.query(sdk.collection(sdk.db, name), sdk.where('createdBy', '==', currentUserId));
+  const snapshot = await sdk.getDocs(queryRef);
+  if (!snapshot.empty) return;
+
+  await Promise.all(defaults.map((item) => {
+    const itemId = String(item.id || Date.now());
+    return sdk.setDoc(sdk.doc(sdk.db, name, itemId), sanitizeForFirestore({
+      ...item,
+      id: itemId,
+      createdBy: currentUserId,
+      createdAt: sdk.serverTimestamp(),
+      updatedAt: sdk.serverTimestamp(),
+    }));
+  }));
+}
+
+function subscribeToCollection(name, onRows, normalizer = (row) => row) {
+  const sdk = window.firebaseServices;
+  if (!sdk || !currentUserId) return;
+  const queryRef = sdk.query(sdk.collection(sdk.db, name), sdk.where('createdBy', '==', currentUserId));
+  const unsubscribe = sdk.onSnapshot(queryRef, (snapshot) => {
+    const rows = snapshot.docs.map((rowDoc) => normalizer({ id: rowDoc.id, ...rowDoc.data() }));
+    onRows(rows);
+    if (name === 'tasks') refreshTaskStatuses();
+    if (currentPage === 'actions' || currentPage === 'audits' || currentPage === 'people' || currentPage === 'dashboard') {
+      showPage(currentPage);
+    }
+  });
+  unsubscribeHandlers.push(unsubscribe);
+}
+
+async function persistCollectionDelta(name, previousItems, nextItems) {
+  const sdk = window.firebaseServices;
+  if (!firebaseReady || !sdk || !currentUserId) return;
+
+  const previousById = new Map(previousItems.map((item) => [String(item.id), item]));
+  const nextById = new Map(nextItems.map((item) => [String(item.id), item]));
+
+  const writes = [];
+  nextById.forEach((item, id) => {
+    const record = sanitizeForFirestore({
+      ...item,
+      id,
+      createdBy: currentUserId,
+      updatedAt: sdk.serverTimestamp(),
+    });
+    if (!previousById.has(id)) record.createdAt = sdk.serverTimestamp();
+    writes.push(sdk.setDoc(sdk.doc(sdk.db, name, id), record, { merge: true }));
+  });
+
+  previousById.forEach((_item, id) => {
+    if (!nextById.has(id)) writes.push(sdk.deleteDoc(sdk.doc(sdk.db, name, id)));
+  });
+
+  await Promise.all(writes);
 }
 
 function setTasks(updater) {
-  const previousTasks = Array.isArray(DATA.actions) ? DATA.actions : [];
-  const nextTasks = typeof updater === 'function' ? updater(previousTasks) : updater;
-  DATA.actions = Array.isArray(nextTasks) ? nextTasks.map(normalizeTask) : previousTasks;
+  const previousTasks = Array.isArray(DATA.actions) ? DATA.actions.map(normalizeTask) : [];
+  const nextTasksRaw = typeof updater === 'function' ? updater(previousTasks) : updater;
+  DATA.actions = Array.isArray(nextTasksRaw) ? nextTasksRaw.map(normalizeTask) : previousTasks;
   refreshTaskStatuses();
-  persistTasks();
+  persistCollectionDelta('tasks', previousTasks, DATA.actions).catch((error) => {
+    console.error('Failed to persist tasks:', error);
+    showToast('Unable to sync tasks to Firestore', 'error');
+  });
 }
 
-DATA.actions = loadTasksFromStorage();
+function setPeople(updater) {
+  const previousPeople = Array.isArray(DATA.people) ? DATA.people : [];
+  const nextPeople = typeof updater === 'function' ? updater(previousPeople) : updater;
+  DATA.people = Array.isArray(nextPeople) ? nextPeople : previousPeople;
+  persistCollectionDelta('employees', previousPeople, DATA.people).catch((error) => {
+    console.error('Failed to persist employees:', error);
+    showToast('Unable to sync employees to Firestore', 'error');
+  });
+}
+
+function setAudits(updater) {
+  const previousAudits = Array.isArray(DATA.audits) ? DATA.audits : [];
+  const nextAudits = typeof updater === 'function' ? updater(previousAudits) : updater;
+  DATA.audits = Array.isArray(nextAudits) ? nextAudits : previousAudits;
+  persistCollectionDelta('checklists', previousAudits, DATA.audits).catch((error) => {
+    console.error('Failed to persist checklists:', error);
+    showToast('Unable to sync checklists to Firestore', 'error');
+  });
+}
+
+async function ensureSignedIn() {
+  const sdk = window.firebaseServices;
+  if (!sdk) return;
+  if (sdk.auth.currentUser) {
+    currentUserId = sdk.auth.currentUser.uid;
+    return;
+  }
+
+  const email = window.prompt('Firebase login email:');
+  const password = window.prompt('Firebase login password:');
+  if (!email || !password) {
+    showToast('Login is required to sync cloud data', 'warning');
+    return;
+  }
+
+  await sdk.signInWithEmailAndPassword(sdk.auth, email, password);
+  currentUserId = sdk.auth.currentUser?.uid || null;
+}
+
+async function initializeFirebaseSync() {
+  while (!window.firebaseServices) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  try {
+    await ensureSignedIn();
+    if (!currentUserId) return;
+
+    await seedCollectionIfEmpty('employees', DEFAULT_PEOPLE);
+    await seedCollectionIfEmpty('checklists', DEFAULT_AUDITS);
+    await seedCollectionIfEmpty('tasks', DEFAULT_ACTIONS.map(normalizeTask));
+
+    subscribeToCollection('employees', (rows) => {
+      DATA.people = rows;
+      populateAssignedToOptions();
+      refreshPeopleUI();
+    });
+    subscribeToCollection('checklists', (rows) => {
+      DATA.audits = rows;
+    });
+    subscribeToCollection('tasks', (rows) => {
+      DATA.actions = rows.map(normalizeTask);
+    }, normalizeTask);
+
+    firebaseReady = true;
+    showToast('Firestore sync active', 'success');
+  } catch (error) {
+    console.error('Firebase initialization failed:', error);
+    showToast('Firebase login/sync failed', 'error');
+  }
+}
+
+DATA.actions = DEFAULT_ACTIONS.map(normalizeTask);
 refreshTaskStatuses();
-persistTasks();
 
 /* ─────────────────────────────────────────────────────────
    ONBOARDING
@@ -2906,7 +3028,7 @@ function submitCreateChecklist(event) {
   const category = type;
   const dueDate = freq === 'Custom' ? customDueDate : '';
 
-  DATA.audits.unshift({
+  setAudits((prev) => [{
     id: generatedChecklistId,
     type,
     title,
@@ -2915,7 +3037,7 @@ function submitCreateChecklist(event) {
     status: 'upcoming',
     plant,
     questions: [],
-  });
+  }, ...prev]);
 
   const newTask = {
     id: Date.now(),
@@ -3302,7 +3424,9 @@ function submitChecklist() {
   const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
   const checklistId = window.activeChecklistId;
   const checklist = DATA.audits.find((audit) => audit.id === checklistId);
-  if (checklist) checklist.status = 'completed';
+  if (checklist) {
+    setAudits((prev) => prev.map((audit) => audit.id === checklistId ? { ...audit, status: 'completed' } : audit));
+  }
   if (checklistId) {
     setTasks((prev) =>
       prev.map((task) =>
@@ -3473,13 +3597,6 @@ function switchPeopleTab(tab) {
   const map = { employees: peopleEmployees, training: peopleTraining, pfesi: peoplePFESI };
   document.getElementById('people-content').innerHTML = (map[tab] || peopleEmployees)();
 }
-
-function setPeople(updater) {
-  const previousPeople = Array.isArray(DATA.people) ? DATA.people : [];
-  const nextPeople = typeof updater === 'function' ? updater(previousPeople) : updater;
-  DATA.people = Array.isArray(nextPeople) ? nextPeople : previousPeople;
-}
-
 function refreshPeopleUI() {
   if (currentPage !== 'people') return;
   const pageSub = document.querySelector('#content .page-sub');
@@ -3774,6 +3891,7 @@ if (addEmployeeFormNode) {
   addEmployeeFormNode.addEventListener('change', updateEmployeeStepUI);
 }
 resetAddEmployeeForm();
+initializeFirebaseSync();
 </script>
 </body>
 </html>
