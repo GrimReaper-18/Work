@@ -2068,6 +2068,7 @@ body.page-exit {
 <!-- ═══════════════════════════════════════════════════════════════════
      JAVASCRIPT
 ═══════════════════════════════════════════════════════════════════ -->
+<script type="module" src="./firebase.js"></script>
 <script>
 function handleLogout() {
   if (document.body.classList.contains('page-exit')) return;
@@ -2180,6 +2181,187 @@ const TASK_STATUS = {
   COMPLETED: 'completed',
   OVERDUE: 'overdue',
 };
+
+let firebaseReady = false;
+let firebaseAuthUid = null;
+const firestoreUnsubscribers = [];
+
+function getFirestoreServices() {
+  return window.firebaseServices || null;
+}
+
+async function ensureFirebaseAuth() {
+  if (firebaseAuthUid) return firebaseAuthUid;
+  const services = getFirestoreServices();
+  if (!services?.auth || !services?.signInAnonymously) return null;
+  if (services.auth.currentUser?.uid) {
+    firebaseAuthUid = services.auth.currentUser.uid;
+    return firebaseAuthUid;
+  }
+  const credential = await services.signInAnonymously(services.auth);
+  firebaseAuthUid = credential.user.uid;
+  return firebaseAuthUid;
+}
+
+function clearFirestoreSubscriptions() {
+  while (firestoreUnsubscribers.length) {
+    const unsubscribe = firestoreUnsubscribers.pop();
+    if (typeof unsubscribe === 'function') unsubscribe();
+  }
+}
+
+async function saveEmployeeToFirestore(employeePayload) {
+  const services = getFirestoreServices();
+  if (!services?.db) return;
+  const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+  const createdBy = await ensureFirebaseAuth();
+  await addDoc(collection(services.db, 'employees'), {
+    ...employeePayload,
+    createdBy: createdBy || null,
+    createdAt: serverTimestamp(),
+  });
+}
+
+async function saveChecklistWithTaskToFirestore(checklistPayload, taskPayload) {
+  const services = getFirestoreServices();
+  if (!services?.db) return null;
+  const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+  const createdBy = await ensureFirebaseAuth();
+  const checklistRef = await addDoc(collection(services.db, 'checklists'), {
+    ...checklistPayload,
+    createdBy: createdBy || null,
+    status: checklistPayload.status || 'open',
+    createdAt: serverTimestamp(),
+  });
+  await addDoc(collection(services.db, 'tasks'), {
+    ...taskPayload,
+    checklistId: checklistRef.id,
+    createdBy: createdBy || null,
+    status: taskPayload.status || TASK_STATUS.OPEN,
+    createdAt: serverTimestamp(),
+  });
+  return checklistRef.id;
+}
+
+async function updateTaskStatusInFirestore(taskId, status) {
+  const services = getFirestoreServices();
+  if (!services?.db || !taskId) return;
+  const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+  await updateDoc(doc(services.db, 'tasks', String(taskId)), {
+    status,
+  });
+}
+
+async function subscribeFirestoreCollections() {
+  const services = getFirestoreServices();
+  if (!services?.db) return false;
+  const { collection, onSnapshot, query, where } = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js');
+  const uid = await ensureFirebaseAuth();
+
+  clearFirestoreSubscriptions();
+
+  firestoreUnsubscribers.push(onSnapshot(collection(services.db, 'employees'), (snapshot) => {
+    const employees = snapshot.docs.map((docSnap) => {
+      const employee = docSnap.data();
+      return {
+        id: employee.basicDetails?.employeeId || docSnap.id,
+        name: employee.basicDetails?.fullName || 'Unknown Employee',
+        dept: employee.workDetails?.department || 'Unassigned',
+        role: employee.workDetails?.role || 'Unassigned',
+        pf: Boolean(employee.compliance?.pfApplicable),
+        esi: Boolean(employee.compliance?.esiApplicable),
+        uan: employee.compliance?.pfNumber || '',
+        ip: employee.compliance?.esiNumber || '—',
+        medical: employee.workDetails?.joiningDate || '—',
+        trainings: employee.safety?.trainingCompleted || [],
+      };
+    });
+    if (employees.length) {
+      DATA.people = employees;
+      if (document.getElementById('new-assigned-to')) populateAssignedToOptions();
+      if (document.getElementById('content')) showPage('people');
+    }
+  }));
+
+  const checklistQuery = uid
+    ? query(collection(services.db, 'checklists'), where('createdBy', '==', uid))
+    : collection(services.db, 'checklists');
+  firestoreUnsubscribers.push(onSnapshot(checklistQuery, (snapshot) => {
+    const checklists = snapshot.docs.map((docSnap) => {
+      const checklist = docSnap.data();
+      return {
+        id: docSnap.id,
+        type: checklist.category || checklist.type || 'Checklist',
+        title: checklist.title || 'Checklist',
+        freq: checklist.frequency || checklist.freq || 'Custom',
+        due: checklist.dueDate || checklist.due || '',
+        status: checklist.status || 'open',
+        plant: checklist.plant || checklist.location || '',
+        department: checklist.department || '',
+        assignedToRole: checklist.assignedRole || checklist.assignedToRole || '',
+        assignedEmployeeId: checklist.assignedEmployeeId || '',
+        questions: checklist.questions || [],
+      };
+    });
+    if (checklists.length) {
+      DATA.audits = checklists;
+      if (document.getElementById('content')) showPage('audits');
+    }
+  }));
+
+  const taskQuery = uid
+    ? query(collection(services.db, 'tasks'), where('createdBy', '==', uid))
+    : collection(services.db, 'tasks');
+  firestoreUnsubscribers.push(onSnapshot(taskQuery, (snapshot) => {
+    const tasks = snapshot.docs.map((docSnap) => {
+      const task = docSnap.data();
+      return normalizeTask({
+        id: docSnap.id,
+        title: task.title || 'Task',
+        type: task.type || 'action',
+        category: task.category || '',
+        plant: task.plant || '',
+        department: task.department || '',
+        assignedTo: task.assignedTo || task.owner || '',
+        assignedToName: task.assignedToName || '',
+        owner: task.owner || '',
+        dueDate: task.dueDate || '',
+        status: task.status || TASK_STATUS.OPEN,
+        checklistId: task.checklistId || null,
+        priority: task.priority || 'med',
+        linked: task.linked || 'Task',
+      });
+    });
+    if (tasks.length) {
+      DATA.actions = tasks;
+      refreshOverdueTasks();
+      if (document.getElementById('content')) showPage('actions');
+    }
+  }));
+
+  return true;
+}
+
+async function initFirestoreSync() {
+  const maxWaitMs = 4000;
+  const start = Date.now();
+  while (!getFirestoreServices() && Date.now() - start < maxWaitMs) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!getFirestoreServices()) {
+    showToast('Firebase not configured. Using local demo data.', 'warning');
+    return;
+  }
+
+  try {
+    await subscribeFirestoreCollections();
+    firebaseReady = true;
+    showToast('Realtime sync enabled (Firestore)', 'success');
+  } catch (error) {
+    console.error('Firestore initialization failed:', error);
+    showToast('Could not connect to Firestore. Check firebase.js config.', 'warning');
+  }
+}
 
 function toInitials(name = '') {
   return String(name)
@@ -2852,7 +3034,7 @@ function resetCreateChecklistForm() {
   updateCreateChecklistStepUI();
 }
 
-function submitCreateChecklist(event) {
+async function submitCreateChecklist(event) {
   event.preventDefault();
   if (!isCreateStepValid(1) || !isCreateStepValid(2) || !isCreateStepValid(3)) {
     if (!document.getElementById('new-assigned-to').value) {
@@ -2877,22 +3059,20 @@ function submitCreateChecklist(event) {
   const assignedToName = assignedEmployee?.name || assignedToRole;
   const dueDate = freq === 'Custom' ? customDueDate : getDueDateFromFrequency(freq);
 
-  DATA.audits.unshift({
-    id: checklistId,
-    type: category,
+  const checklistPayload = {
     title,
-    freq,
-    due: dueDate,
-    status: 'upcoming',
+    category,
     plant,
+    frequency: freq,
+    dueDate,
     department,
-    assignedToRole,
+    assignedRole: assignedToRole,
     assignedEmployeeId,
+    status: 'open',
     questions: [],
-  });
+  };
 
-  const newTask = normalizeTask({
-    id: Date.now(),
+  const taskPayload = {
     title,
     type: 'checklist',
     category,
@@ -2906,9 +3086,33 @@ function submitCreateChecklist(event) {
     checklistId,
     priority: 'med',
     linked: `${category} Checklist`,
-  });
-  DATA.actions = [...DATA.actions, newTask];
-  refreshOverdueTasks();
+  };
+
+  if (firebaseReady) {
+    try {
+      await saveChecklistWithTaskToFirestore(checklistPayload, taskPayload);
+    } catch (error) {
+      console.error('Checklist save failed:', error);
+      showToast('Failed to save checklist to Firestore', 'error');
+      return;
+    }
+  } else {
+    DATA.audits.unshift({
+      id: checklistId,
+      type: category,
+      title,
+      freq,
+      due: dueDate,
+      status: 'upcoming',
+      plant,
+      department,
+      assignedToRole,
+      assignedEmployeeId,
+      questions: [],
+    });
+    DATA.actions = [...DATA.actions, normalizeTask(taskPayload)];
+    refreshOverdueTasks();
+  }
 
   resetCreateChecklistForm();
   closeCreateChecklist();
@@ -3031,7 +3235,7 @@ function getSelectedValues(selector) {
     .map((node) => node.value);
 }
 
-function submitAddEmployee(event) {
+async function submitAddEmployee(event) {
   if (event) event.preventDefault();
   if (!isEmployeeStepValid(1) || !isEmployeeStepValid(2) || !isEmployeeStepValid(3)) {
     showToast('Please complete required fields before creating employee', 'warning');
@@ -3070,6 +3274,29 @@ function submitAddEmployee(event) {
       trainingCertificates: document.getElementById('emp-doc-training').files?.[0]?.name || '',
     },
   };
+
+  if (firebaseReady) {
+    try {
+      await saveEmployeeToFirestore(payload);
+    } catch (error) {
+      console.error('Employee save failed:', error);
+      showToast('Failed to save employee to Firestore', 'error');
+      return;
+    }
+  } else {
+    DATA.people = [{
+      id: payload.basicDetails.employeeId,
+      name: payload.basicDetails.fullName,
+      dept: payload.workDetails.department,
+      role: payload.workDetails.role,
+      pf: payload.compliance.pfApplicable,
+      esi: payload.compliance.esiApplicable,
+      uan: payload.compliance.pfNumber || '',
+      ip: payload.compliance.esiNumber || '—',
+      medical: payload.workDetails.joiningDate,
+      trainings: payload.safety.trainingCompleted || [],
+    }, ...DATA.people];
+  }
 
   console.log('Employee created payload:', payload);
   closeAddEmployeeDrawer();
@@ -3220,7 +3447,7 @@ function closeModal() {
   document.getElementById('checklist-modal').classList.remove('open');
 }
 
-function submitChecklist() {
+async function submitChecklist() {
   const answered = Object.keys(window.answeredQs || {}).length;
   const total    = window.totalQs || 0;
   if (answered < total) {
@@ -3245,12 +3472,17 @@ function submitChecklist() {
   if (activeChecklistId) {
     const targetAudit = DATA.audits.find(audit => audit.id === activeChecklistId);
     if (targetAudit) targetAudit.status = 'completed';
+    const linkedTaskIds = [];
     DATA.actions = DATA.actions.map(task => {
       const normalizedTask = normalizeTask(task);
+      if (normalizedTask.checklistId === activeChecklistId) linkedTaskIds.push(normalizedTask.id);
       return normalizedTask.checklistId === activeChecklistId
         ? { ...normalizedTask, status: TASK_STATUS.COMPLETED }
         : normalizedTask;
     });
+    if (firebaseReady) {
+      await Promise.all(linkedTaskIds.map((taskId) => updateTaskStatusInFirestore(taskId, TASK_STATUS.COMPLETED)));
+    }
   }
   closeModal();
   showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
@@ -3361,9 +3593,18 @@ function showActionDetail(id) {
   openDrawer();
 }
 
-function markActionDone(id) {
+async function markActionDone(id) {
   const a = DATA.actions.find(x => x.id === id);
   if (a) {
+    if (firebaseReady) {
+      try {
+        await updateTaskStatusInFirestore(id, TASK_STATUS.COMPLETED);
+      } catch (error) {
+        console.error('Task status update failed:', error);
+        showToast('Failed to update task in Firestore', 'error');
+        return;
+      }
+    }
     a.status = TASK_STATUS.COMPLETED;
     if (a.type === 'checklist' && a.checklistId) {
       const linkedChecklist = DATA.audits.find(audit => audit.id === a.checklistId);
@@ -3692,6 +3933,8 @@ if (addEmployeeFormNode) {
   addEmployeeFormNode.addEventListener('change', updateEmployeeStepUI);
 }
 resetAddEmployeeForm();
+initFirestoreSync();
+window.addEventListener('beforeunload', clearFirestoreSubscriptions);
 </script>
 </body>
 </html>
