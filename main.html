@@ -3038,40 +3038,68 @@ function submitAddEmployee(event) {
     return;
   }
 
-  const payload = {
-    basicDetails: {
-      fullName: document.getElementById('emp-full-name').value.trim(),
-      employeeId: document.getElementById('emp-id').value.trim(),
-      phoneNumber: document.getElementById('emp-phone').value.trim(),
-      email: document.getElementById('emp-email').value.trim(),
-    },
-    workDetails: {
-      department: document.getElementById('emp-dept').value,
-      role: document.getElementById('emp-role').value.trim(),
-      joiningDate: document.getElementById('emp-joining-date').value,
-    },
-    compliance: {
-      pfApplicable: document.getElementById('emp-pf-applicable').checked,
-      pfNumber: document.getElementById('emp-pf-number').value.trim(),
-      esiApplicable: document.getElementById('emp-esi-applicable').checked,
-      esiNumber: document.getElementById('emp-esi-number').value.trim(),
-      salaryRange: document.getElementById('emp-salary-range').value.trim(),
-      contractorName: document.getElementById('emp-contractor').value.trim(),
-    },
-    safety: {
-      ppeRequired: getSelectedValues('.emp-ppe'),
-      trainingCompleted: getSelectedValues('.emp-training'),
-      medicalFitnessStatus: document.getElementById('emp-medical-status').textContent,
-    },
-    documents: {
-      idProof: document.getElementById('emp-doc-idproof').files?.[0]?.name || '',
-      pfRegistrationProof: document.getElementById('emp-doc-pf').files?.[0]?.name || '',
-      esiCard: document.getElementById('emp-doc-esi').files?.[0]?.name || '',
-      trainingCertificates: document.getElementById('emp-doc-training').files?.[0]?.name || '',
-    },
+  const fullName = document.getElementById('emp-full-name').value.trim();
+  const employeeId = document.getElementById('emp-id').value.trim();
+  const phone = document.getElementById('emp-phone').value.trim();
+  const email = document.getElementById('emp-email').value.trim();
+  const department = document.getElementById('emp-dept').value;
+  const role = document.getElementById('emp-role').value.trim();
+  const joiningDate = document.getElementById('emp-joining-date').value;
+  const pfApplicable = document.getElementById('emp-pf-applicable').checked;
+  const pfNumber = document.getElementById('emp-pf-number').value.trim();
+  const esiApplicable = document.getElementById('emp-esi-applicable').checked;
+  const esiNumber = document.getElementById('emp-esi-number').value.trim();
+  const salary = document.getElementById('emp-salary-range').value.trim();
+  const contractorName = document.getElementById('emp-contractor').value.trim();
+  const ppeRequired = getSelectedValues('.emp-ppe');
+  const trainingCompleted = getSelectedValues('.emp-training');
+  const medicalStatus = document.getElementById('emp-medical-status').textContent;
+  const documents = {
+    idProof: document.getElementById('emp-doc-idproof').files?.[0]?.name || '',
+    pfRegistrationProof: document.getElementById('emp-doc-pf').files?.[0]?.name || '',
+    esiCard: document.getElementById('emp-doc-esi').files?.[0]?.name || '',
+    trainingCertificates: document.getElementById('emp-doc-training').files?.[0]?.name || '',
   };
 
-  console.log('Employee created payload:', payload);
+  if (DATA.people.some((person) => person.id === employeeId)) {
+    showToast('Employee ID already exists. Please use a unique ID.', 'warning');
+    return;
+  }
+
+  const newEmployee = {
+    id: employeeId,
+    name: fullName,
+    phone,
+    email,
+    department,
+    role,
+    joiningDate,
+    pfApplicable,
+    pfNumber,
+    esiApplicable,
+    esiNumber,
+    salary,
+    contractorName,
+    ppeRequired,
+    trainingCompleted,
+    medicalStatus,
+    documents,
+    dept: department,
+    pf: pfApplicable,
+    esi: esiApplicable,
+    uan: pfApplicable ? pfNumber : '—',
+    ip: esiApplicable ? esiNumber : '—',
+    medical: joiningDate || '—',
+    trainings: trainingCompleted,
+  };
+
+  DATA.people = [...DATA.people, newEmployee];
+  populateAssignedToOptions();
+  console.log('Employee created payload:', newEmployee);
+  if (document.getElementById('people-content')) {
+    showPage('people');
+  }
+  resetAddEmployeeForm();
   closeAddEmployeeDrawer();
   showToast('Employee created successfully', 'success');
 }
