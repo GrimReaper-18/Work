@@ -2202,7 +2202,12 @@ function normalizeTask(task) {
 }
 
 DATA.actions = DATA.actions.map(normalizeTask);
-
+DATA.plants = Array.isArray(DATA.plants) && DATA.plants.length
+  ? DATA.plants
+  : [...new Set(DATA.audits.map((audit) => audit.plant).filter(Boolean))].map((name, index) => ({
+      id: `plant-${index + 1}`,
+      name,
+    }));
 
 window.firebaseDataApi = {
   getData: () => DATA,
@@ -3753,7 +3758,7 @@ resetAddEmployeeForm();
 </script>
 
 <script type="module">
-  import { db, auth } from './firebase.js';
+  import { db } from './firebase.js';
   import {
     addDoc,
     collection,
@@ -3767,9 +3772,10 @@ resetAddEmployeeForm();
     updateDoc,
     where,
   } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
-  import { onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+  import { getAuth, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 
   const api = window.firebaseDataApi;
+  const auth = getAuth();
 
   async function seedCollectionIfEmpty(name, rows, mapRow = (row) => row) {
     const snapshot = await getDocs(query(collection(db, name), limit(1)));
@@ -3782,6 +3788,7 @@ resetAddEmployeeForm();
     await seedCollectionIfEmpty('employees', currentData.people, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
     await seedCollectionIfEmpty('checklists', currentData.audits, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
     await seedCollectionIfEmpty('tasks', currentData.actions, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
+    await seedCollectionIfEmpty('plants', currentData.plants, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
 
     onSnapshot(query(collection(db, 'employees'), where('createdBy', '==', user.uid)), (snapshot) => {
       const rows = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
@@ -3799,6 +3806,12 @@ resetAddEmployeeForm();
       const rows = snapshot.docs.map((entry) => ({ id: Number(entry.id) || entry.id, ...entry.data() }));
       api.setCollection('actions', rows);
       api.rerender();
+    });
+
+    onSnapshot(query(collection(db, 'plants'), where('createdBy', '==', user.uid)), (snapshot) => {
+      const rows = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+      api.setCollection('plants', rows);
+      if (api.getCurrentPage() === 'settings' || api.getCurrentPage() === 'dashboard') api.rerender();
     });
 
     window.firebaseSync = {
@@ -3820,6 +3833,16 @@ resetAddEmployeeForm();
           createdAt: serverTimestamp(),
         });
       },
+      savePlant: async (plant) => setDoc(doc(db, 'plants', String(plant.id)), {
+        ...plant,
+        createdBy: user.uid,
+        createdAt: serverTimestamp(),
+      }),
+      runConnectionTest: async () => addDoc(collection(db, 'test'), {
+        message: 'Firestore connected',
+        createdAt: new Date(),
+        createdBy: user.uid,
+      }),
       updateTaskStatus: async (taskId, status) => updateDoc(doc(db, 'tasks', String(taskId)), { status }),
       completeChecklist: async (checklistId) => {
         await updateDoc(doc(db, 'checklists', String(checklistId)), { status: 'completed' });
@@ -3827,6 +3850,11 @@ resetAddEmployeeForm();
         await Promise.all(linkedTasks.docs.map((taskDoc) => updateDoc(doc(db, 'tasks', taskDoc.id), { status: 'completed' })));
       },
     };
+
+    if (!sessionStorage.getItem('firestoreConnectionTested')) {
+      await window.firebaseSync.runConnectionTest();
+      sessionStorage.setItem('firestoreConnectionTested', 'true');
+    }
   }
 
   onAuthStateChanged(auth, async (user) => {
