@@ -3631,8 +3631,77 @@ function showPersonDetail(id) {
 /* ─────────────────────────────────────────────────────────
    DOCUMENTS
 ───────────────────────────────────────────────────────── */
+const DOCS_STORAGE_KEY = 'documents';
 let activeFolder = 'All';
-const folders = ['All','Licences','PF/ESI','Audits','OEM','Safety','Accidents'];
+const folders = ['All','Licenses','PF/ESI','Audits','OEM','Safety','Accidents'];
+let isUploadOpen = false;
+let uploadFolder = '';
+let uploadExpiryDate = '';
+let uploadFile = null;
+
+function normalizeDocumentRecord(doc = {}) {
+  const normalized = { ...doc };
+  if (normalized.folder === 'Licences') normalized.folder = 'Licenses';
+  if (!normalized.uploadedAt && normalized.date) normalized.uploadedAt = normalized.date;
+  if (!normalized.date && normalized.uploadedAt) normalized.date = normalized.uploadedAt;
+  if (!normalized.expiry || normalized.expiry === '—') normalized.expiry = null;
+  normalized.type = normalized.type || getDocType(normalized.name || '');
+  normalized.size = normalized.size || '—';
+  normalized.tag = getDocStatusTag(normalized.expiry);
+  return normalized;
+}
+
+function loadDocumentsFromStorage() {
+  const saved = localStorage.getItem(DOCS_STORAGE_KEY);
+  if (!saved) {
+    DATA.docs = DATA.docs.map(normalizeDocumentRecord);
+    return;
+  }
+  try {
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) {
+      DATA.docs = parsed.map(normalizeDocumentRecord);
+      return;
+    }
+  } catch {
+    localStorage.removeItem(DOCS_STORAGE_KEY);
+  }
+  DATA.docs = DATA.docs.map(normalizeDocumentRecord);
+}
+
+function saveDocumentsToStorage() {
+  localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(DATA.docs));
+}
+
+function requiresExpiry(folder) {
+  return ['Licenses', 'OEM', 'Safety'].includes(folder);
+}
+
+function getFileSize(file) {
+  const sizeKB = file.size / 1024;
+  if (sizeKB > 1024) {
+    return (sizeKB / 1024).toFixed(1) + ' MB';
+  }
+  return sizeKB.toFixed(0) + ' KB';
+}
+
+function getDocType(fileName = '') {
+  const parts = fileName.split('.');
+  return parts.length > 1 ? parts.pop().toLowerCase() : 'file';
+}
+
+function getTodayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getDocUploadedAt(doc) {
+  return doc.uploadedAt || doc.date || '—';
+}
+
+function getDocStatusTag(expiry) {
+  if (!expiry) return 'ok';
+  return new Date(expiry) < new Date(getTodayISO()) ? 'expired' : 'ok';
+}
 
 function docs() {
   const filteredDocs = activeFolder === 'All' ? DATA.docs : DATA.docs.filter(d => d.folder === activeFolder);
@@ -3647,7 +3716,7 @@ function docs() {
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')"><span class="search-icon" aria-hidden="true" style="margin-right:6px"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>Search</button>
-        <button class="btn btn-primary" onclick="showToast('Upload document — select file','info')">+ Upload</button>
+        <button class="btn btn-primary" onclick="openUploadDrawer()">+ Upload</button>
       </div>
     </div>
 
@@ -3655,29 +3724,33 @@ function docs() {
       <div class="doc-tree">
         ${folders.map(f => `
         <div class="doc-tree-item ${activeFolder===f?'active':''} ${f!=='All'?'sub':''}" onclick="switchFolder('${f}')">
-          <span>${f==='All'?'🗂':f==='Licences'?'📋':f==='PF/ESI'?'💼':f==='Audits'?'✅':f==='OEM'?'🏭':f==='Safety'?'🦺':'⚠'}</span>
+          <span>${f==='All'?'🗂':f==='Licenses'?'📋':f==='PF/ESI'?'💼':f==='Audits'?'✅':f==='OEM'?'🏭':f==='Safety'?'🦺':'⚠'}</span>
           ${f}
           <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?DATA.docs.length:DATA.docs.filter(d=>d.folder===f).length}</span>
         </div>`).join('')}
       </div>
 
       <div class="doc-list">
-        ${filteredDocs.map(d => `
+        ${filteredDocs.map(d => {
+          const uploadedAt = getDocUploadedAt(d);
+          const status = getDocStatusTag(d.expiry);
+          return `
         <div class="doc-item" onclick="showDocDetail('${d.id}')">
           <div class="doc-icon">${typeIcons[d.type]||'📄'}</div>
           <div style="flex:1">
             <div class="doc-name">${d.name}</div>
-            <div class="doc-meta">${d.folder} · ${d.size} · ${d.date}${d.expiry!=='—'?' · Expires: '+d.expiry:''}</div>
+            <div class="doc-meta">${d.folder} · ${d.size} · ${uploadedAt}${d.expiry?' · Expires: '+d.expiry:''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span class="badge ${d.tag==='overdue'?'badge-overdue':d.tag==='due'?'badge-due':d.tag==='expired'?'badge-overdue':'badge-ok'}">${d.tag.toUpperCase()}</span>
+            <span class="badge ${status==='expired'?'badge-overdue':'badge-ok'}">${status.toUpperCase()}</span>
             <div class="doc-actions">
               <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();showToast('Downloading '+this.closest('.doc-item').querySelector('.doc-name').textContent,'info')">↓</button>
             </div>
           </div>
-        </div>`).join('')}
+        </div>`;
+        }).join('')}
 
-        <div class="upload-zone" onclick="showToast('Upload document — select file','info')">
+        <div class="upload-zone" onclick="openUploadDrawer()">
           <div class="upload-zone-icon">📁</div>
           <div class="upload-zone-text">Drop files here or <strong>click to upload</strong><br/><span style="font-size:11px;color:var(--muted-l)">PDF, JPG, XLSX up to 50MB</span></div>
         </div>
@@ -3691,10 +3764,95 @@ function switchFolder(folder) {
   showPage('docs');
 }
 
+function openUploadDrawer() {
+  isUploadOpen = true;
+  uploadFolder = '';
+  uploadExpiryDate = '';
+  uploadFile = null;
+  document.getElementById('drawer-title').textContent = 'Upload Document';
+  document.getElementById('drawer-sub').textContent = 'Select folder, attach file and save';
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="display:grid;gap:14px">
+      <div class="form-field full">
+        <label for="upload-folder">Folder Type</label>
+        <select id="upload-folder" onchange="handleUploadFolderChange(this.value)">
+          <option value="">Select folder type</option>
+          ${folders.filter(folder => folder !== 'All').map(folder => `<option value="${folder}">${folder}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-field full" id="upload-expiry-field" style="display:none">
+        <label for="upload-expiry">Expiry Date</label>
+        <input id="upload-expiry" type="date" value="" onchange="uploadExpiryDate=this.value" />
+      </div>
+      <div class="form-field full">
+        <label for="upload-file">File Upload</label>
+        <input id="upload-file" type="file" onchange="handleFileSelect(event)" />
+        <div id="upload-file-name" style="margin-top:8px;font-size:12px;color:var(--muted)">No file selected</div>
+      </div>
+    </div>`;
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-primary" id="save-upload-btn" onclick="handleUploadDocument()" disabled>Save document</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDrawer()">Cancel</button>`;
+  openDrawer();
+}
+
+function handleUploadFolderChange(folder) {
+  uploadFolder = folder;
+  if (!requiresExpiry(uploadFolder)) {
+    uploadExpiryDate = '';
+    const expiryInput = document.getElementById('upload-expiry');
+    if (expiryInput) expiryInput.value = '';
+  }
+  const expiryField = document.getElementById('upload-expiry-field');
+  if (expiryField) expiryField.style.display = requiresExpiry(uploadFolder) ? 'block' : 'none';
+}
+
+function handleFileSelect(event) {
+  const selectedFile = event?.target?.files?.[0] || null;
+  uploadFile = selectedFile;
+  const nameEl = document.getElementById('upload-file-name');
+  if (nameEl) nameEl.textContent = selectedFile ? `Selected: ${selectedFile.name}` : 'No file selected';
+  const saveBtn = document.getElementById('save-upload-btn');
+  if (saveBtn) saveBtn.disabled = !selectedFile;
+}
+
+function handleUploadDocument() {
+  if (!uploadFile || !uploadFolder) {
+    showToast('Please select folder and file before saving', 'warning');
+    return;
+  }
+
+  const uploadedAt = getTodayISO();
+  const expiry = requiresExpiry(uploadFolder) ? (uploadExpiryDate || null) : null;
+  const newDoc = normalizeDocumentRecord({
+    id: Date.now().toString(),
+    name: uploadFile.name,
+    folder: uploadFolder,
+    size: getFileSize(uploadFile),
+    uploadedAt,
+    date: uploadedAt,
+    expiry,
+    status: 'OK',
+    type: getDocType(uploadFile.name),
+  });
+
+  DATA.docs = [...DATA.docs, newDoc];
+  saveDocumentsToStorage();
+
+  isUploadOpen = false;
+  closeDrawer();
+  if (document.getElementById('nav-docs')?.classList.contains('active')) {
+    showPage('docs');
+  }
+  showToast('Document uploaded successfully', 'success');
+}
+
 function showDocDetail(id) {
   const d = DATA.docs.find(x => x.id === id);
   if (!d) return;
   const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
+  const uploadedAt = getDocUploadedAt(d);
+  const status = getDocStatusTag(d.expiry);
   document.getElementById('drawer-title').textContent = d.name;
   document.getElementById('drawer-sub').textContent = d.folder + ' · ' + d.size;
   document.getElementById('drawer-body').innerHTML = `
@@ -3703,10 +3861,10 @@ function showDocDetail(id) {
       <div style="font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--font-m)">${d.name}</div>
     </div>
     <div class="divider"></div>
-    ${[['Folder',d.folder],['File size',d.size],['Uploaded',d.date],['Expiry',d.expiry],['Status','<span class="badge '+( d.tag==='ok'?'badge-ok':d.tag==='due'?'badge-due':'badge-overdue')+'">'+d.tag.toUpperCase()+'</span>']].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
+    ${[['Folder',d.folder],['File size',d.size],['Uploaded',uploadedAt],['Expiry',d.expiry || '—'],['Status','<span class="badge '+(status==='expired'?'badge-overdue':'badge-ok')+'">'+status.toUpperCase()+'</span>']].map(([l,v])=>`<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`).join('')}
     <div class="divider"></div>
     <div class="card-title" style="margin-bottom:12px">Version history</div>
-    <div class="history-item"><div class="history-dot" style="background:var(--green-l)"></div><div><div class="history-date">Current version · ${d.date}</div><div class="history-text">${d.name}</div></div></div>`;
+    <div class="history-item"><div class="history-dot" style="background:var(--green-l)"></div><div><div class="history-date">Current version · ${uploadedAt}</div><div class="history-text">${d.name}</div></div></div>`;
   document.getElementById('drawer-footer').innerHTML = `
     <button class="btn btn-navy" onclick="showToast('Downloading '+' — '+'${d.name}','info')">↓ Download</button>
     <button class="btn btn-secondary" onclick="showToast('Document replaced — upload new version','info')">⬆ Replace</button>
@@ -3753,6 +3911,7 @@ function openDrawer() {
   document.getElementById('drawer').classList.add('open');
 }
 function closeDrawer() {
+  isUploadOpen = false;
   document.getElementById('drawer-overlay').classList.remove('open');
   document.getElementById('drawer').classList.remove('open');
 }
@@ -3806,6 +3965,8 @@ function globalSearch(q) {
 // Start with onboarding, then show dashboard after
 // (modal auto-triggers, dashboard shown after completion)
 loadPlantFromStorage();
+loadDocumentsFromStorage();
+saveDocumentsToStorage();
 applyPlantToSidebar();
 applyPlantToDatasets();
 hydrateOnboardingPlantInputs();
