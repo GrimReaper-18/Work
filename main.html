@@ -2080,7 +2080,7 @@ function handleLogout() {
 /* ─────────────────────────────────────────────────────────
    DATA
 ───────────────────────────────────────────────────────── */
-let DATA = {
+const DATA = {
   register: [
     { id:'mpcb',  name:'MPCB Consent to Operate', cat:'Environment', law:'Water Act / Air Act', plant:'Chakan MIDC', owner:'Aman Rajak', freq:'5 years', due:'2026-03-10', status:'overdue', evidence:true,  daysLeft:-3,  fine:'₹1,50,000', portal:'https://enviis.mpcb.gov.in' },
     { id:'dish',  name:'Factory Licence (Form 2)', cat:'Statutory',   law:'Factories Act 1948', plant:'Chakan MIDC', owner:'Aman Rajak', freq:'Yearly',  due:'2026-04-05', status:'due',     evidence:true,  daysLeft:21,  fine:'₹75,000',   portal:'https://dish.maharashtra.gov.in' },
@@ -2202,22 +2202,6 @@ function normalizeTask(task) {
 }
 
 DATA.actions = DATA.actions.map(normalizeTask);
-DATA.plants = Array.isArray(DATA.plants) && DATA.plants.length
-  ? DATA.plants
-  : [...new Set(DATA.audits.map((audit) => audit.plant).filter(Boolean))].map((name, index) => ({
-      id: `plant-${index + 1}`,
-      name,
-    }));
-
-window.firebaseDataApi = {
-  getData: () => DATA,
-  setCollection: (key, value) => {
-    DATA[key] = value;
-    if (key === 'actions') refreshOverdueTasks();
-  },
-  rerender: () => showPage(window.__CURRENT_PAGE__ || 'dashboard'),
-  getCurrentPage: () => window.__CURRENT_PAGE__ || 'dashboard',
-};
 
 function refreshOverdueTasks() {
   const now = new Date();
@@ -2338,7 +2322,6 @@ function runOnboardingLoad() {
    NAVIGATION
 ───────────────────────────────────────────────────────── */
 function showPage(page) {
-  window.__CURRENT_PAGE__ = page;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const navEl = document.getElementById('nav-' + page);
   if (navEl) navEl.classList.add('active');
@@ -2926,21 +2909,6 @@ function submitCreateChecklist(event) {
   });
   DATA.actions = [...DATA.actions, newTask];
   refreshOverdueTasks();
-  window.firebaseSync?.saveChecklist?.({
-    checklist: {
-      id: checklistId,
-      title,
-      category,
-      plant,
-      frequency: freq,
-      assignedRole: assignedToRole,
-      assignedEmployeeId,
-      department,
-      status: 'open',
-      dueDate,
-    },
-    task: newTask,
-  });
 
   resetCreateChecklistForm();
   closeCreateChecklist();
@@ -3126,7 +3094,6 @@ function submitAddEmployee(event) {
   };
 
   DATA.people = [...DATA.people, newEmployee];
-  window.firebaseSync?.saveEmployee?.(newEmployee);
   populateAssignedToOptions();
   console.log('Employee created payload:', newEmployee);
   if (document.getElementById('people-content')) {
@@ -3312,7 +3279,6 @@ function submitChecklist() {
         ? { ...normalizedTask, status: TASK_STATUS.COMPLETED }
         : normalizedTask;
     });
-    window.firebaseSync?.completeChecklist?.(activeChecklistId);
   }
   closeModal();
   showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
@@ -3427,7 +3393,6 @@ function markActionDone(id) {
   const a = DATA.actions.find(x => x.id === id);
   if (a) {
     a.status = TASK_STATUS.COMPLETED;
-    window.firebaseSync?.updateTaskStatus?.(a.id, TASK_STATUS.COMPLETED);
     if (a.type === 'checklist' && a.checklistId) {
       const linkedChecklist = DATA.audits.find(audit => audit.id === a.checklistId);
       if (linkedChecklist) linkedChecklist.status = 'completed';
@@ -3756,119 +3721,5 @@ if (addEmployeeFormNode) {
 }
 resetAddEmployeeForm();
 </script>
-
-<script type="module">
-  import { db } from './firebase.js';
-  import {
-    addDoc,
-    collection,
-    doc,
-    getDocs,
-    limit,
-    onSnapshot,
-    query,
-    serverTimestamp,
-    setDoc,
-    updateDoc,
-    where,
-  } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
-  import { getAuth, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
-
-  const api = window.firebaseDataApi;
-  const auth = getAuth();
-
-  async function seedCollectionIfEmpty(name, rows, mapRow = (row) => row) {
-    const snapshot = await getDocs(query(collection(db, name), limit(1)));
-    if (!snapshot.empty) return;
-    await Promise.all(rows.map((row) => setDoc(doc(db, name, String(row.id)), mapRow(row))));
-  }
-
-  async function bootstrap(user) {
-    const currentData = api.getData();
-    await seedCollectionIfEmpty('employees', currentData.people, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
-    await seedCollectionIfEmpty('checklists', currentData.audits, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
-    await seedCollectionIfEmpty('tasks', currentData.actions, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
-    await seedCollectionIfEmpty('plants', currentData.plants, (row) => ({ ...row, createdBy: user.uid, createdAt: serverTimestamp() }));
-
-    onSnapshot(query(collection(db, 'employees'), where('createdBy', '==', user.uid)), (snapshot) => {
-      const rows = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
-      api.setCollection('people', rows);
-      if (api.getCurrentPage() === 'people' || api.getCurrentPage() === 'audits') api.rerender();
-    });
-
-    onSnapshot(query(collection(db, 'checklists'), where('createdBy', '==', user.uid)), (snapshot) => {
-      const rows = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
-      api.setCollection('audits', rows);
-      if (api.getCurrentPage() === 'audits' || api.getCurrentPage() === 'dashboard') api.rerender();
-    });
-
-    onSnapshot(query(collection(db, 'tasks'), where('createdBy', '==', user.uid)), (snapshot) => {
-      const rows = snapshot.docs.map((entry) => ({ id: Number(entry.id) || entry.id, ...entry.data() }));
-      api.setCollection('actions', rows);
-      api.rerender();
-    });
-
-    onSnapshot(query(collection(db, 'plants'), where('createdBy', '==', user.uid)), (snapshot) => {
-      const rows = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
-      api.setCollection('plants', rows);
-      if (api.getCurrentPage() === 'settings' || api.getCurrentPage() === 'dashboard') api.rerender();
-    });
-
-    window.firebaseSync = {
-      saveEmployee: async (employee) => setDoc(doc(db, 'employees', String(employee.id)), {
-        ...employee,
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-      }),
-      saveChecklist: async ({ checklist, task }) => {
-        await setDoc(doc(db, 'checklists', String(checklist.id)), {
-          ...checklist,
-          createdBy: user.uid,
-          createdAt: serverTimestamp(),
-        });
-        await setDoc(doc(db, 'tasks', String(task.id)), {
-          ...task,
-          checklistId: checklist.id,
-          createdBy: user.uid,
-          createdAt: serverTimestamp(),
-        });
-      },
-      savePlant: async (plant) => setDoc(doc(db, 'plants', String(plant.id)), {
-        ...plant,
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-      }),
-      runConnectionTest: async () => addDoc(collection(db, 'test'), {
-        message: 'Firestore connected',
-        createdAt: new Date(),
-        createdBy: user.uid,
-      }),
-      updateTaskStatus: async (taskId, status) => updateDoc(doc(db, 'tasks', String(taskId)), { status }),
-      completeChecklist: async (checklistId) => {
-        await updateDoc(doc(db, 'checklists', String(checklistId)), { status: 'completed' });
-        const linkedTasks = await getDocs(query(collection(db, 'tasks'), where('checklistId', '==', checklistId), where('createdBy', '==', user.uid)));
-        await Promise.all(linkedTasks.docs.map((taskDoc) => updateDoc(doc(db, 'tasks', taskDoc.id), { status: 'completed' })));
-      },
-    };
-
-    if (!sessionStorage.getItem('firestoreConnectionTested')) {
-      await window.firebaseSync.runConnectionTest();
-      sessionStorage.setItem('firestoreConnectionTested', 'true');
-    }
-  }
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      await signInAnonymously(auth);
-      return;
-    }
-    try {
-      await bootstrap(user);
-    } catch (error) {
-      console.error('Firebase bootstrap failed', error);
-    }
-  });
-</script>
-
 </body>
 </html>
