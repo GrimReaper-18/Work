@@ -1583,9 +1583,9 @@ body.page-exit {
       <div class="onboard-h">Where is your plant?</div>
       <div class="onboard-p">Location determines which state-specific rules apply — MPCB, Maharashtra Factories Rules, DISH, etc.</div>
       <input class="onboard-input" type="text" placeholder="Plant name (e.g. Ranjan Engineering Pvt Ltd)" id="inp-plant"/>
-      <input class="onboard-input" type="text" placeholder="Location (e.g. Chakan MIDC, Pune)" id="inp-location" value="Chakan MIDC, Pune"/>
-      <input class="onboard-input" type="text" placeholder="State (e.g. Maharashtra)" id="inp-state" value="Maharashtra"/>
-      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="nextOnboard(2)">Continue →</button>
+      <input class="onboard-input" type="text" placeholder="Location (e.g. Chakan MIDC, Pune)" id="inp-location"/>
+      <input class="onboard-input" type="text" placeholder="State (e.g. Maharashtra)" id="inp-state"/>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="handleOnboardingContinue()">Continue →</button>
     </div>
 
     <!-- Step 2: Workers -->
@@ -1611,7 +1611,7 @@ body.page-exit {
       <div style="text-align:center;padding:20px 0">
         <div id="ob-icon" aria-hidden="true"></div>
         <div class="onboard-h" id="ob-msg">Loading your compliance pack…</div>
-        <div class="onboard-p" id="ob-sub">Configuring 33 obligations · Maharashtra</div>
+        <div class="onboard-p" id="ob-sub">Configuring 33 obligations</div>
         <div class="prog-bar" style="margin:24px 0">
           <div class="prog-fill orange" id="ob-progress" style="width:0;transition:width 0.4s ease"></div>
         </div>
@@ -1690,7 +1690,7 @@ body.page-exit {
     <div class="modal-header">
       <div>
         <div class="modal-title" id="modal-title">Foundry Safety Audit</div>
-        <div class="modal-sub" id="modal-sub">Monthly · Chakan MIDC Plant · March 2026</div>
+        <div class="modal-sub" id="modal-sub">Monthly · Plant · March 2026</div>
       </div>
       <div class="drawer-close" onclick="closeModal()">×</div>
     </div>
@@ -1988,10 +1988,11 @@ body.page-exit {
 
   <div class="sidebar-plant">
     <div class="plant-label">Active plant</div>
-    <div class="plant-name">
+    <div class="plant-name" id="sidebar-plant-name">
       <div class="dot-live"></div>
-      Ranjan Engineering
+      No Plant
     </div>
+    <div class="plant-label" id="sidebar-plant-location" style="margin-top:6px"></div>
   </div>
 
   <nav class="sidebar-nav">
@@ -2075,6 +2076,56 @@ function handleLogout() {
   setTimeout(() => {
     window.location.replace('index.html');
   }, 280);
+}
+
+const PLANT_STORAGE_KEY = 'plant';
+const plantState = {
+  plantName: '',
+  city: '',
+  state: '',
+};
+
+function loadPlantFromStorage() {
+  const saved = localStorage.getItem(PLANT_STORAGE_KEY);
+  if (!saved) return;
+  try {
+    const parsed = JSON.parse(saved);
+    plantState.plantName = parsed?.plantName || '';
+    plantState.city = parsed?.city || '';
+    plantState.state = parsed?.state || '';
+  } catch {
+    localStorage.removeItem(PLANT_STORAGE_KEY);
+  }
+}
+
+function savePlantToStorage() {
+  localStorage.setItem(PLANT_STORAGE_KEY, JSON.stringify(plantState));
+}
+
+function getActivePlantName() {
+  return plantState.plantName || 'No Plant';
+}
+
+function getActivePlantLocation() {
+  if (plantState.city && plantState.state) return `${plantState.city}, ${plantState.state}`;
+  return plantState.city || plantState.state || '';
+}
+
+function hydrateOnboardingPlantInputs() {
+  document.getElementById('inp-plant').value = plantState.plantName;
+  document.getElementById('inp-location').value = plantState.city;
+  document.getElementById('inp-state').value = plantState.state;
+}
+
+function applyPlantToSidebar() {
+  const plantNameEl = document.getElementById('sidebar-plant-name');
+  const plantLocationEl = document.getElementById('sidebar-plant-location');
+  if (plantNameEl) {
+    plantNameEl.innerHTML = `<div class="dot-live"></div>${getActivePlantName()}`;
+  }
+  if (plantLocationEl) {
+    plantLocationEl.textContent = getActivePlantLocation();
+  }
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -2203,6 +2254,12 @@ function normalizeTask(task) {
 
 DATA.actions = DATA.actions.map(normalizeTask);
 
+function applyPlantToDatasets() {
+  const activePlantLocation = getActivePlantLocation() || getActivePlantName();
+  DATA.register = DATA.register.map((item) => ({ ...item, plant: activePlantLocation }));
+  DATA.audits = DATA.audits.map((item) => ({ ...item, plant: activePlantLocation }));
+}
+
 function refreshOverdueTasks() {
   const now = new Date();
   DATA.actions = DATA.actions.map((task) => {
@@ -2276,9 +2333,18 @@ function nextOnboard(step) {
   if (step === 3) runOnboardingLoad();
 }
 
+function handleOnboardingContinue() {
+  plantState.plantName = document.getElementById('inp-plant').value.trim();
+  plantState.city = document.getElementById('inp-location').value.trim();
+  plantState.state = document.getElementById('inp-state').value.trim();
+  savePlantToStorage();
+  applyPlantToSidebar();
+  nextOnboard(2);
+}
+
 function runOnboardingLoad() {
   const items = [
-    'Maharashtra Factories Rules 1963…',
+    `${plantState.state || 'State'} Factories Rules 1963…`,
     'MPCB Consent obligations…',
     'DISH Factory Licence schedule…',
     'Foundry safety checklists…',
@@ -2296,7 +2362,7 @@ function runOnboardingLoad() {
   const list = document.getElementById('ob-items');
   setOnboardingIcon('loading');
   msg.textContent = 'Loading compliance pack…';
-  sub.textContent = 'Configuring 33 obligations · Maharashtra';
+  sub.textContent = `Configuring 33 obligations${plantState.state ? ` · ${plantState.state}` : ''}`;
 
   const iv = setInterval(() => {
     if (i >= items.length) {
@@ -2544,7 +2610,7 @@ function register() {
     <div class="page-header">
       <div>
         <div class="page-title">Compliance Register</div>
-        <div class="page-sub">All obligations · ${DATA.register.length} items · Chakan MIDC</div>
+        <div class="page-sub">All obligations · ${DATA.register.length} items · ${getActivePlantLocation() || getActivePlantName()}</div>
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="exportReport()">📤 Export</button>
@@ -3632,8 +3698,8 @@ function settings() {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       ${[
-        {icon:'🏭',title:'Plants & Locations',sub:'Chakan MIDC · 1 plant · Add new plant',btn:'Manage plants'},
-        {icon:'⚖️',title:'Compliance Frameworks',sub:'33 obligations active · Maharashtra templates',btn:'Edit frameworks'},
+        {icon:'🏭',title:'Plants & Locations',sub:`${getActivePlantLocation() || getActivePlantName()} · 1 plant · Add new plant`,btn:'Manage plants'},
+        {icon:'⚖️',title:'Compliance Frameworks',sub:`33 obligations active${plantState.state ? ` · ${plantState.state} templates` : ''}`,btn:'Edit frameworks'},
         {icon:'👥',title:'Users & Roles',sub:'4 users · Admin, Manager, Checker, Viewer',btn:'Manage users'},
         {icon:'🔔',title:'Notifications & Reminders',sub:'Email + WhatsApp · 60/30/15 day lead times',btn:'Configure'},
         {icon:'📊',title:'Report Templates',sub:'OEM pack, Statutory report, PF/ESI summary',btn:'Edit templates'},
@@ -3711,6 +3777,10 @@ function globalSearch(q) {
 ───────────────────────────────────────────────────────── */
 // Start with onboarding, then show dashboard after
 // (modal auto-triggers, dashboard shown after completion)
+loadPlantFromStorage();
+applyPlantToSidebar();
+applyPlantToDatasets();
+hydrateOnboardingPlantInputs();
 document.getElementById('new-freq').addEventListener('change', updateCustomFrequencyFields);
 resetCreateChecklistForm();
 
