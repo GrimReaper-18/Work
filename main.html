@@ -840,8 +840,7 @@ body.page-exit {
 .audit-card-footer { display: flex; justify-content: space-between; align-items: center; }
 
 /* CHECKLIST MODAL */
-#checklist-modal,
-#create-checklist-modal {
+#checklist-modal {
   display: none;
   position: fixed;
   inset: 0;
@@ -851,8 +850,30 @@ body.page-exit {
   align-items: center;
   justify-content: center;
 }
-#checklist-modal.open,
-#create-checklist-modal.open { display: flex; }
+#checklist-modal.open { display: flex; }
+#create-checklist-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+}
+#create-checklist-modal.open { display: block; }
+#create-checklist-modal .create-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+}
+#create-checklist-modal .create-drawer {
+  position: relative;
+  margin-left: auto;
+  width: min(92vw, 460px);
+  height: 100%;
+  background: var(--white);
+  box-shadow: -12px 0 30px rgba(15, 23, 42, 0.15);
+  animation: slideIn 0.26s ease-out both;
+  display: flex;
+  flex-direction: column;
+}
 .modal-box {
   background: var(--white);
   border-radius: 20px;
@@ -881,6 +902,20 @@ body.page-exit {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+}
+#create-checklist-modal .modal-header { padding: 20px 20px 14px; }
+#create-checklist-modal .modal-body { padding: 20px; }
+#create-checklist-modal .modal-footer { padding: 20px; }
+#create-checklist-modal .modal-footer {
+  justify-content: flex-end;
+  gap: 10px;
+}
+#create-footer-spacer {
+  margin-right: auto;
+}
+#create-checklist-modal .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .checklist-section { margin-bottom: 20px; }
 .checklist-section-title {
@@ -1008,6 +1043,7 @@ body.page-exit {
 }
 .create-step.active {
   display: block;
+  animation: fadeUp 0.2s ease both;
 }
 .create-form-grid {
   display: grid;
@@ -1706,15 +1742,16 @@ body.page-exit {
      CREATE CHECKLIST MODAL
 ═══════════════════════════════════════════════════════════════════ -->
 <div id="create-checklist-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title">Create Checklist</div>
-        <div class="modal-sub">Configure a new checklist in 3 steps</div>
+  <div class="create-overlay" onclick="closeCreateChecklist()"></div>
+  <div class="create-drawer" role="dialog" aria-modal="true" aria-label="Create Checklist">
+    <form onsubmit="submitCreateChecklist(event)" style="height:100%;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Create Checklist</div>
+          <div class="modal-sub">Set up checklist details in guided steps.</div>
+        </div>
+        <button type="button" class="drawer-close" onclick="closeCreateChecklist()" aria-label="Close">×</button>
       </div>
-      <div class="drawer-close" onclick="closeCreateChecklist()">×</div>
-    </div>
-    <form onsubmit="submitCreateChecklist(event)">
       <div class="modal-body">
         <div class="create-step-indicator">
           <div class="create-step-label" id="create-step-label">Step 1 / 3</div>
@@ -1767,7 +1804,7 @@ body.page-exit {
               <label for="new-law">Applicable Law / Standard (Optional)</label>
               <input id="new-law" placeholder="e.g. Factories Act, Fire NOC" />
             </div>
-            <div class="form-field">
+            <div class="form-field full">
               <label for="new-freq">Frequency</label>
               <select id="new-freq">
                 <option value="">Select frequency</option>
@@ -1816,12 +1853,10 @@ body.page-exit {
         </div>
       </div>
       <div class="modal-footer">
-        <div style="display:flex;gap:10px">
-          <button type="button" class="btn btn-secondary" onclick="closeCreateChecklist()">Cancel</button>
-          <button type="button" class="btn btn-secondary" id="create-back-btn" onclick="createChecklistPrevStep()" style="display:none;">Back</button>
-          <button type="button" class="btn btn-primary" id="create-next-btn" onclick="createChecklistNextStep()">Next</button>
-          <button type="submit" class="btn btn-primary" id="create-submit-btn" style="display:none;">Create checklist</button>
-        </div>
+        <button type="button" class="btn btn-secondary" id="create-back-btn" onclick="createChecklistPrevStep()" style="display:none;">Back</button>
+        <span id="create-footer-spacer"></span>
+        <button type="button" class="btn btn-primary" id="create-next-btn" onclick="createChecklistNextStep()">Next</button>
+        <button type="submit" class="btn btn-primary" id="create-submit-btn" style="display:none;">Create Checklist</button>
       </div>
     </form>
   </div>
@@ -2816,11 +2851,22 @@ function updateCreateChecklistStepUI() {
   for (let s = 1; s <= CREATE_STEP_COUNT; s++) {
     document.getElementById(`create-step-${s}`).classList.toggle('active', s === createChecklistStep);
   }
+  const stepValid = isCreateStepValid(createChecklistStep);
   document.getElementById('create-step-label').textContent = `Step ${createChecklistStep} / ${CREATE_STEP_COUNT}`;
   document.getElementById('create-step-fill').style.width = `${(createChecklistStep / CREATE_STEP_COUNT) * 100}%`;
-  document.getElementById('create-back-btn').style.display = createChecklistStep === 1 ? 'none' : 'inline-flex';
-  document.getElementById('create-next-btn').style.display = createChecklistStep === CREATE_STEP_COUNT ? 'none' : 'inline-flex';
-  document.getElementById('create-submit-btn').style.display = createChecklistStep === CREATE_STEP_COUNT ? 'inline-flex' : 'none';
+
+  const backBtn = document.getElementById('create-back-btn');
+  const spacer = document.getElementById('create-footer-spacer');
+  const nextBtn = document.getElementById('create-next-btn');
+  const submitBtn = document.getElementById('create-submit-btn');
+
+  backBtn.style.display = createChecklistStep === 1 ? 'none' : 'inline-flex';
+  spacer.style.display = createChecklistStep === 1 ? 'inline-block' : 'none';
+  nextBtn.style.display = createChecklistStep === CREATE_STEP_COUNT ? 'none' : 'inline-flex';
+  submitBtn.style.display = createChecklistStep === CREATE_STEP_COUNT ? 'inline-flex' : 'none';
+
+  nextBtn.disabled = createChecklistStep < CREATE_STEP_COUNT && !stepValid;
+  submitBtn.disabled = createChecklistStep === CREATE_STEP_COUNT && !stepValid;
 }
 
 function createChecklistNextStep() {
@@ -3711,7 +3757,20 @@ function globalSearch(q) {
 ───────────────────────────────────────────────────────── */
 // Start with onboarding, then show dashboard after
 // (modal auto-triggers, dashboard shown after completion)
-document.getElementById('new-freq').addEventListener('change', updateCustomFrequencyFields);
+document.getElementById('new-freq').addEventListener('change', () => {
+  updateCustomFrequencyFields();
+  updateCreateChecklistStepUI();
+});
+[
+  'new-title', 'new-type', 'new-location',
+  'new-department', 'new-law', 'new-custom-start', 'new-custom-due-date',
+  'new-assigned-to', 'new-reviewer', 'new-reminder'
+].forEach((id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', updateCreateChecklistStepUI);
+  el.addEventListener('change', updateCreateChecklistStepUI);
+});
 resetCreateChecklistForm();
 
 const addEmployeeFormNode = document.getElementById('add-employee-form');
