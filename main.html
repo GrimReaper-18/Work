@@ -176,6 +176,30 @@ body.page-exit {
   animation: pulse 2s ease-in-out infinite;
 }
 
+.plant-switcher {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.07);
+  color: var(--white);
+  font-size: 12px;
+  padding: 6px 8px;
+}
+.plant-switcher option { color: var(--charcoal); }
+.plant-add-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255,255,255,0.35);
+  background: transparent;
+  color: rgba(255,255,255,0.82);
+  font-size: 11px;
+  cursor: pointer;
+}
+.plant-add-btn:hover { background: rgba(255,255,255,0.06); }
+
 .sidebar-nav {
   flex: 1;
   padding: 8px 10px;
@@ -1993,6 +2017,8 @@ body.page-exit {
       No Plant
     </div>
     <div class="plant-label" id="sidebar-plant-location" style="margin-top:6px"></div>
+    <select id="plant-switcher" class="plant-switcher" onchange="switchPlant(this.value)"></select>
+    <button class="plant-add-btn" onclick="addNewPlant()">+ Add Plant</button>
   </div>
 
   <nav class="sidebar-nav">
@@ -2078,43 +2104,113 @@ function handleLogout() {
   }, 280);
 }
 
-const PLANT_STORAGE_KEY = 'plant';
-const plantState = {
-  plantName: '',
-  city: '',
-  state: '',
-};
+const LEGACY_PLANT_STORAGE_KEY = 'plant';
+const PLANTS_STORAGE_KEY = 'plants';
+const CURRENT_PLANT_STORAGE_KEY = 'currentPlant';
+const defaultPlants = [
+  { id: 'p1', plantName: 'Ranjan Engineering', city: 'Pune', state: 'MH' },
+  { id: 'p2', plantName: 'ABC Foundry', city: 'Mumbai', state: 'MH' },
+];
+let plants = [];
+let selectedPlantId = '';
+let currentPage = 'dashboard';
 
-function loadPlantFromStorage() {
-  const saved = localStorage.getItem(PLANT_STORAGE_KEY);
-  if (!saved) return;
-  try {
-    const parsed = JSON.parse(saved);
-    plantState.plantName = parsed?.plantName || '';
-    plantState.city = parsed?.city || '';
-    plantState.state = parsed?.state || '';
-  } catch {
-    localStorage.removeItem(PLANT_STORAGE_KEY);
+function loadPlantState() {
+  const savedPlantsRaw = localStorage.getItem(PLANTS_STORAGE_KEY);
+  if (savedPlantsRaw) {
+    try {
+      plants = JSON.parse(savedPlantsRaw) || [];
+    } catch {
+      plants = [];
+      localStorage.removeItem(PLANTS_STORAGE_KEY);
+    }
+  }
+
+  if (!plants.length) {
+    const legacyRaw = localStorage.getItem(LEGACY_PLANT_STORAGE_KEY);
+    if (legacyRaw) {
+      try {
+        const legacy = JSON.parse(legacyRaw);
+        if (legacy?.plantName) {
+          plants = [{
+            id: 'p1',
+            plantName: legacy.plantName,
+            city: legacy.city || '',
+            state: legacy.state || '',
+          }];
+        }
+      } catch {
+        localStorage.removeItem(LEGACY_PLANT_STORAGE_KEY);
+      }
+    }
+  }
+
+  if (!plants.length) {
+    plants = defaultPlants;
+    localStorage.setItem(PLANTS_STORAGE_KEY, JSON.stringify(plants));
+  }
+
+  const savedCurrentRaw = localStorage.getItem(CURRENT_PLANT_STORAGE_KEY);
+  if (savedCurrentRaw) {
+    try {
+      const savedCurrent = JSON.parse(savedCurrentRaw);
+      if (savedCurrent?.id && plants.some((plant) => plant.id === savedCurrent.id)) {
+        selectedPlantId = savedCurrent.id;
+      }
+    } catch {
+      localStorage.removeItem(CURRENT_PLANT_STORAGE_KEY);
+    }
+  }
+
+  if (!selectedPlantId && plants.length) {
+    selectedPlantId = plants[0].id;
+  }
+  saveCurrentPlantToStorage();
+}
+
+function savePlantsToStorage() {
+  localStorage.setItem(PLANTS_STORAGE_KEY, JSON.stringify(plants));
+}
+
+function getSelectedPlant() {
+  return plants.find((plant) => plant.id === selectedPlantId) || null;
+}
+
+function saveCurrentPlantToStorage() {
+  const selectedPlant = getSelectedPlant();
+  if (selectedPlant) {
+    localStorage.setItem(CURRENT_PLANT_STORAGE_KEY, JSON.stringify(selectedPlant));
+    localStorage.setItem(LEGACY_PLANT_STORAGE_KEY, JSON.stringify({
+      plantName: selectedPlant.plantName,
+      city: selectedPlant.city,
+      state: selectedPlant.state,
+    }));
   }
 }
 
-function savePlantToStorage() {
-  localStorage.setItem(PLANT_STORAGE_KEY, JSON.stringify(plantState));
-}
-
 function getActivePlantName() {
-  return plantState.plantName || 'No Plant';
+  return getSelectedPlant()?.plantName || 'No Plant';
 }
 
 function getActivePlantLocation() {
-  if (plantState.city && plantState.state) return `${plantState.city}, ${plantState.state}`;
-  return plantState.city || plantState.state || '';
+  const selectedPlant = getSelectedPlant();
+  if (!selectedPlant) return '';
+  if (selectedPlant.city && selectedPlant.state) return `${selectedPlant.city}, ${selectedPlant.state}`;
+  return selectedPlant.city || selectedPlant.state || '';
+}
+
+function renderPlantSwitcher() {
+  const switcher = document.getElementById('plant-switcher');
+  if (!switcher) return;
+  switcher.innerHTML = plants.map((plant) => `<option value="${plant.id}">${plant.plantName}</option>`).join('');
+  switcher.value = selectedPlantId;
 }
 
 function hydrateOnboardingPlantInputs() {
-  document.getElementById('inp-plant').value = plantState.plantName;
-  document.getElementById('inp-location').value = plantState.city;
-  document.getElementById('inp-state').value = plantState.state;
+  const selectedPlant = getSelectedPlant();
+  document.getElementById('inp-plant').value = selectedPlant?.plantName || '';
+  document.getElementById('inp-location').value = selectedPlant?.city || '';
+  document.getElementById('inp-state').value = selectedPlant?.state || '';
 }
 
 function applyPlantToSidebar() {
@@ -2126,6 +2222,43 @@ function applyPlantToSidebar() {
   if (plantLocationEl) {
     plantLocationEl.textContent = getActivePlantLocation();
   }
+  renderPlantSwitcher();
+}
+
+function switchPlant(plantId) {
+  if (!plantId || plantId === selectedPlantId) return;
+  selectedPlantId = plantId;
+  saveCurrentPlantToStorage();
+  applyPlantToSidebar();
+  showPage(currentPage);
+}
+
+function addNewPlant() {
+  const plantName = prompt('Plant name');
+  if (!plantName) return;
+  const city = prompt('City') || '';
+  const state = prompt('State') || '';
+  const newPlant = { id: Date.now().toString(), plantName: plantName.trim(), city: city.trim(), state: state.trim() };
+  plants = [...plants, newPlant];
+  selectedPlantId = newPlant.id;
+  savePlantsToStorage();
+  saveCurrentPlantToStorage();
+  applyPlantToSidebar();
+  showPage(currentPage);
+  showToast(`${newPlant.plantName} added`, 'success');
+}
+
+function getPlantScopedRows(rows) {
+  return rows.filter((row) => row.plantId === selectedPlantId);
+}
+
+function plantifyData() {
+  if (!selectedPlantId) return;
+  DATA.register = DATA.register.map((item) => ({ ...item, plantId: item.plantId || selectedPlantId }));
+  DATA.audits = DATA.audits.map((item) => ({ ...item, plantId: item.plantId || selectedPlantId }));
+  DATA.actions = DATA.actions.map((item) => ({ ...item, plantId: item.plantId || selectedPlantId }));
+  DATA.people = DATA.people.map((item) => ({ ...item, plantId: item.plantId || selectedPlantId }));
+  DATA.docs = DATA.docs.map((item) => ({ ...item, plantId: item.plantId || selectedPlantId }));
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -2254,12 +2387,6 @@ function normalizeTask(task) {
 
 DATA.actions = DATA.actions.map(normalizeTask);
 
-function applyPlantToDatasets() {
-  const activePlantLocation = getActivePlantLocation() || getActivePlantName();
-  DATA.register = DATA.register.map((item) => ({ ...item, plant: activePlantLocation }));
-  DATA.audits = DATA.audits.map((item) => ({ ...item, plant: activePlantLocation }));
-}
-
 function refreshOverdueTasks() {
   const now = new Date();
   DATA.actions = DATA.actions.map((task) => {
@@ -2334,17 +2461,21 @@ function nextOnboard(step) {
 }
 
 function handleOnboardingContinue() {
-  plantState.plantName = document.getElementById('inp-plant').value.trim();
-  plantState.city = document.getElementById('inp-location').value.trim();
-  plantState.state = document.getElementById('inp-state').value.trim();
-  savePlantToStorage();
+  const selectedPlant = getSelectedPlant();
+  if (!selectedPlant) return;
+  selectedPlant.plantName = document.getElementById('inp-plant').value.trim();
+  selectedPlant.city = document.getElementById('inp-location').value.trim();
+  selectedPlant.state = document.getElementById('inp-state').value.trim();
+  plants = plants.map((plant) => (plant.id === selectedPlant.id ? selectedPlant : plant));
+  savePlantsToStorage();
+  saveCurrentPlantToStorage();
   applyPlantToSidebar();
   nextOnboard(2);
 }
 
 function runOnboardingLoad() {
   const items = [
-    `${plantState.state || 'State'} Factories Rules 1963…`,
+    `${getSelectedPlant()?.state || 'State'} Factories Rules 1963…`,
     'MPCB Consent obligations…',
     'DISH Factory Licence schedule…',
     'Foundry safety checklists…',
@@ -2362,7 +2493,7 @@ function runOnboardingLoad() {
   const list = document.getElementById('ob-items');
   setOnboardingIcon('loading');
   msg.textContent = 'Loading compliance pack…';
-  sub.textContent = `Configuring 33 obligations${plantState.state ? ` · ${plantState.state}` : ''}`;
+  sub.textContent = `Configuring 33 obligations${getSelectedPlant()?.state ? ` · ${getSelectedPlant().state}` : ''}`;
 
   const iv = setInterval(() => {
     if (i >= items.length) {
@@ -2388,6 +2519,7 @@ function runOnboardingLoad() {
    NAVIGATION
 ───────────────────────────────────────────────────────── */
 function showPage(page) {
+  currentPage = page;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const navEl = document.getElementById('nav-' + page);
   if (navEl) navEl.classList.add('active');
@@ -2417,15 +2549,24 @@ function afterRender(page) {
   if (page === 'dashboard') initCalendar();
 }
 
+function getFilteredRegister() { return getPlantScopedRows(DATA.register); }
+function getFilteredAudits() { return getPlantScopedRows(DATA.audits); }
+function getFilteredActions() { return getPlantScopedRows(DATA.actions); }
+function getFilteredPeople() { return getPlantScopedRows(DATA.people); }
+function getFilteredDocs() { return getPlantScopedRows(DATA.docs); }
+
 /* ─────────────────────────────────────────────────────────
    DASHBOARD
 ───────────────────────────────────────────────────────── */
 function dashboard() {
-  const over  = DATA.register.filter(r => r.status === 'overdue').length;
-  const due   = DATA.register.filter(r => r.status === 'due').length;
-  const ok    = DATA.register.filter(r => r.status === 'ok').length;
+  const filteredRegister = getFilteredRegister();
+  const filteredAudits = getFilteredAudits();
+  const filteredActions = getFilteredActions();
+  const over  = filteredRegister.filter(r => r.status === 'overdue').length;
+  const due   = filteredRegister.filter(r => r.status === 'due').length;
+  const ok    = filteredRegister.filter(r => r.status === 'ok').length;
   refreshOverdueTasks();
-  const openA = DATA.actions.filter(a => a.status !== TASK_STATUS.COMPLETED).length;
+  const openA = filteredActions.filter(a => a.status !== TASK_STATUS.COMPLETED).length;
 
   return `
   <div class="fade-up">
@@ -2475,7 +2616,7 @@ function dashboard() {
             </div>
             <button class="btn btn-secondary btn-sm" onclick="showPage('register')">View all →</button>
           </div>
-          ${DATA.register.filter(r => r.status === 'overdue' || (r.status === 'due' && r.daysLeft <= 5)).map(r => `
+          ${filteredRegister.filter(r => r.status === 'overdue' || (r.status === 'due' && r.daysLeft <= 5)).map(r => `
           <div class="overdue-item ${r.status === 'overdue' ? 'critical' : 'warning'}" onclick="showRegisterDetail('${r.id}')">
             <div class="overdue-icon">${r.status === 'overdue' ? '🔴' : '🟡'}</div>
             <div style="flex:1">
@@ -2494,7 +2635,7 @@ function dashboard() {
             <div class="card-title">Upcoming Audits this Month</div>
             <button class="btn btn-secondary btn-sm" onclick="showPage('audits')">View all →</button>
           </div>
-          ${DATA.audits.filter(a => a.status !== 'completed').slice(0,3).map(a => `
+          ${filteredAudits.filter(a => a.status !== 'completed').slice(0,3).map(a => `
           <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--surface-2)">
             <div style="width:44px;height:44px;border-radius:10px;background:${a.type==='OEM'?'rgba(34,51,59,0.10)':a.type==='Safety/EHS'?'rgba(198,172,143,0.14)':'rgba(94,80,63,0.10)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${a.type==='OEM'?'🏭':a.type==='Safety/EHS'?'🦺':'📋'}</div>
             <div style="flex:1">
@@ -2587,7 +2728,7 @@ let activeFilters = { cat: 'All', status: 'All' };
 let activeSearchQuery = '';
 
 function getRegisterRows() {
-  let rows = DATA.register;
+  let rows = getFilteredRegister();
   if (activeFilters.cat !== 'All')    rows = rows.filter(r => r.cat === activeFilters.cat);
   if (activeFilters.status !== 'All') rows = rows.filter(r => r.status === activeFilters.status);
   if (activeSearchQuery) {
@@ -2610,7 +2751,7 @@ function register() {
     <div class="page-header">
       <div>
         <div class="page-title">Compliance Register</div>
-        <div class="page-sub">All obligations · ${DATA.register.length} items · ${getActivePlantLocation() || getActivePlantName()}</div>
+        <div class="page-sub">All obligations · ${getFilteredRegister().length} items · ${getActivePlantLocation() || getActivePlantName()}</div>
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="exportReport()">📤 Export</button>
@@ -2683,7 +2824,7 @@ function filterRegister(key, val) {
 }
 
 function showRegisterDetail(id) {
-  const r = DATA.register.find(x => x.id === id);
+  const r = getFilteredRegister().find(x => x.id === id);
   if (!r) return;
   document.getElementById('drawer-title').textContent = r.name;
   document.getElementById('drawer-sub').textContent = r.cat + ' · ' + r.plant;
@@ -2736,13 +2877,13 @@ function audits() {
     <div class="page-header">
       <div>
         <div class="page-title">Audits & Checklists</div>
-        <div class="page-sub">${DATA.audits.length} checklists · 2 due this month</div>
+        <div class="page-sub">${getFilteredAudits().length} checklists · 2 due this month</div>
       </div>
       <button class="btn btn-primary" onclick="openCreateChecklist()">+ Create checklist</button>
     </div>
 
     <div class="audit-cards">
-      ${DATA.audits.map(a => `
+      ${getFilteredAudits().map(a => `
       <div class="audit-card" onclick="openAudit('${a.id}')">
         <div class="audit-card-type">${a.type}</div>
         <div class="audit-card-title">${a.title}</div>
@@ -2797,7 +2938,7 @@ function populateAssignedToOptions() {
   const assignedEmployeeId = document.getElementById('new-assigned-employee-id');
   if (!select) return;
 
-  const employees = Array.isArray(DATA?.people) ? DATA.people : [];
+  const employees = getFilteredPeople();
   if (!employees.length) {
     select.innerHTML = '<option value="">No role/designation available</option>';
     select.value = '';
@@ -2832,8 +2973,7 @@ function updateAssignedEmployeeFromRole() {
     return;
   }
 
-  const matchedEmployee = (Array.isArray(DATA?.people) ? DATA.people : [])
-    .find(person => person.role === selectedRole);
+  const matchedEmployee = getFilteredPeople().find(person => person.role === selectedRole);
   if (matchedEmployee) {
     assignedEmployeeId.value = matchedEmployee.id;
     assignmentMessage.textContent = `Assigned employee: ${matchedEmployee.name}`;
@@ -2911,6 +3051,14 @@ function createChecklistPrevStep() {
 function resetCreateChecklistForm() {
   const form = document.querySelector('#create-checklist-modal form');
   if (form) form.reset();
+  const locationSelect = document.getElementById('new-location');
+  if (locationSelect) {
+    const selectedPlant = getSelectedPlant();
+    const plantLabel = getActivePlantLocation() || getActivePlantName();
+    locationSelect.innerHTML = selectedPlant ? `<option value="${plantLabel}">${selectedPlant.plantName}</option>` : '<option value=>Select location</option>' ;
+    locationSelect.value = selectedPlant ? plantLabel : '';
+    locationSelect.disabled = Boolean(selectedPlant);
+  }
   populateAssignedToOptions();
   updateAssignedEmployeeFromRole();
   createChecklistStep = 1;
@@ -2939,11 +3087,12 @@ function submitCreateChecklist(event) {
   const assignedEmployeeId = document.getElementById('new-assigned-employee-id').value;
   const customDueDate = document.getElementById('new-custom-due-date').value;
   const checklistId = `A${String(Date.now()).slice(-6)}`;
-  const assignedEmployee = DATA.people.find((person) => person.id === assignedEmployeeId);
+  const assignedEmployee = getFilteredPeople().find((person) => person.id === assignedEmployeeId);
   const assignedToName = assignedEmployee?.name || assignedToRole;
   const dueDate = freq === 'Custom' ? customDueDate : getDueDateFromFrequency(freq);
 
   DATA.audits.unshift({
+    plantId: selectedPlantId,
     id: checklistId,
     type: category,
     title,
@@ -2958,6 +3107,7 @@ function submitCreateChecklist(event) {
   });
 
   const newTask = normalizeTask({
+    plantId: selectedPlantId,
     id: Date.now(),
     title,
     type: 'checklist',
@@ -2991,7 +3141,7 @@ function setEmployeeStep(nextStep) {
 }
 
 function generateEmployeeId() {
-  const maxId = DATA.people.reduce((max, person) => {
+  const maxId = getFilteredPeople().reduce((max, person) => {
     const parsed = parseInt(String(person.id || '').replace(/\D/g, ''), 10);
     return Number.isFinite(parsed) ? Math.max(max, parsed) : max;
   }, 1000);
@@ -3127,12 +3277,13 @@ function submitAddEmployee(event) {
     trainingCertificates: document.getElementById('emp-doc-training').files?.[0]?.name || '',
   };
 
-  if (DATA.people.some((person) => person.id === employeeId)) {
+  if (getFilteredPeople().some((person) => person.id === employeeId)) {
     showToast('Employee ID already exists. Please use a unique ID.', 'warning');
     return;
   }
 
   const newEmployee = {
+    plantId: selectedPlantId,
     id: employeeId,
     name: fullName,
     phone,
@@ -3171,7 +3322,7 @@ function submitAddEmployee(event) {
 }
 
 function openAudit(id) {
-  const a = DATA.audits.find(x => x.id === id);
+  const a = getFilteredAudits().find(x => x.id === id);
   if (!a) return;
   document.getElementById('drawer-title').textContent = a.title;
   document.getElementById('drawer-sub').textContent = a.type + ' · ' + a.freq + ' · ' + a.plant;
@@ -3190,7 +3341,7 @@ function openAudit(id) {
 }
 
 function openChecklist(id) {
-  const a = DATA.audits.find(x => x.id === id);
+  const a = getFilteredAudits().find(x => x.id === id);
   if (!a) return;
   window.activeChecklistId = id;
   document.getElementById('modal-title').textContent = a.title;
@@ -3337,7 +3488,7 @@ function submitChecklist() {
   const nos = Object.values(window.answeredQs || {}).filter(v => v === 'no').length;
   const activeChecklistId = window.activeChecklistId;
   if (activeChecklistId) {
-    const targetAudit = DATA.audits.find(audit => audit.id === activeChecklistId);
+    const targetAudit = DATA.audits.find(audit => audit.id === activeChecklistId && audit.plantId === selectedPlantId);
     if (targetAudit) targetAudit.status = 'completed';
     DATA.actions = DATA.actions.map(task => {
       const normalizedTask = normalizeTask(task);
@@ -3350,6 +3501,7 @@ function submitChecklist() {
   showToast(`✅ Checklist submitted with ${photoCount} photo${photoCount!==1?'s':''} and ${docCount} document${docCount!==1?'s':''}`, 'success');
   if (nos > 0) {
     DATA.actions.unshift({
+      plantId: selectedPlantId,
       id: Date.now(), title: `Fix ${nos} audit finding${nos>1?'s':''}`, linked:'Audit submission',
       owner:'AR', assignedTo:'AR', dueDate:'2026-03-31', status:TASK_STATUS.OPEN, priority:'high', type:'action'
     });
@@ -3362,9 +3514,10 @@ function submitChecklist() {
 ───────────────────────────────────────────────────────── */
 function actions() {
   refreshOverdueTasks();
-  const overdue = DATA.actions.filter(a => a.status === TASK_STATUS.OVERDUE);
-  const open    = DATA.actions.filter(a => a.status === TASK_STATUS.OPEN);
-  const done    = DATA.actions.filter(a => a.status === TASK_STATUS.COMPLETED);
+  const plantActions = getFilteredActions();
+  const overdue = plantActions.filter(a => a.status === TASK_STATUS.OVERDUE);
+  const open    = plantActions.filter(a => a.status === TASK_STATUS.OPEN);
+  const done    = plantActions.filter(a => a.status === TASK_STATUS.COMPLETED);
 
   function actionCard(a) {
     const categoryLabel = a.category || a.linked || 'General';
@@ -3389,7 +3542,7 @@ function actions() {
     <div class="page-header">
       <div>
         <div class="page-title">Actions & Tasks</div>
-        <div class="page-sub">${DATA.actions.filter(a=>a.status!==TASK_STATUS.COMPLETED).length} open · ${done.length} completed</div>
+        <div class="page-sub">${plantActions.filter(a=>a.status!==TASK_STATUS.COMPLETED).length} open · ${done.length} completed</div>
       </div>
       <div style="display:flex;gap:10px">
         <div style="display:flex;gap:4px;background:var(--surface-2);border-radius:10px;padding:4px">
@@ -3430,7 +3583,7 @@ function actions() {
 }
 
 function showActionDetail(id) {
-  const a = DATA.actions.find(x => x.id === id);
+  const a = getFilteredActions().find(x => x.id === id);
   if (!a) return;
   if (a.type === 'checklist' && a.checklistId) {
     openChecklist(a.checklistId);
@@ -3456,11 +3609,11 @@ function showActionDetail(id) {
 }
 
 function markActionDone(id) {
-  const a = DATA.actions.find(x => x.id === id);
+  const a = getFilteredActions().find(x => x.id === id);
   if (a) {
     a.status = TASK_STATUS.COMPLETED;
     if (a.type === 'checklist' && a.checklistId) {
-      const linkedChecklist = DATA.audits.find(audit => audit.id === a.checklistId);
+      const linkedChecklist = DATA.audits.find(audit => audit.id === a.checklistId && audit.plantId === selectedPlantId);
       if (linkedChecklist) linkedChecklist.status = 'completed';
     }
   }
@@ -3480,7 +3633,7 @@ function people() {
     <div class="page-header">
       <div>
         <div class="page-title">People & Training</div>
-        <div class="page-sub">${DATA.people.length} employees · PF/ESI tracking enabled</div>
+        <div class="page-sub">${getFilteredPeople().length} employees · PF/ESI tracking enabled</div>
       </div>
       <button class="btn btn-primary" onclick="openAddEmployeeDrawer()">+ Add employee</button>
     </div>
@@ -3511,7 +3664,7 @@ function peopleEmployees() {
         <th>Employee</th><th>Dept</th><th>Role</th><th>PF</th><th>ESI</th><th>UAN</th><th>Last Medical</th><th>Trainings</th>
       </tr></thead>
       <tbody>
-        ${DATA.people.map(p => `
+        ${getFilteredPeople().map(p => `
         <tr onclick="showPersonDetail('${p.id}')">
           <td class="cell-primary">${p.name}<br/><span class="cell-muted" style="font-family:var(--font-m)">${p.id}</span></td>
           <td>${p.dept}</td>
@@ -3536,7 +3689,7 @@ function peopleTraining() {
           ${trainings.map(t => `<th>${t}</th>`).join('')}
         </tr></thead>
         <tbody>
-          ${DATA.people.map(p => `
+          ${getFilteredPeople().map(p => `
           <tr>
             <td style="padding-left:16px"><div style="font-size:13px;font-weight:600;color:var(--charcoal)">${p.name}</div><div style="font-size:10px;color:var(--muted);font-family:var(--font-m)">${p.dept}</div></td>
             ${trainings.map(t => {
@@ -3554,8 +3707,8 @@ function peoplePFESI() {
   return `
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     ${[
-      {title:'PF Status', icon:'💼', ok:DATA.people.filter(p=>p.pf).length, issue:DATA.people.filter(p=>p.pf&&!p.uan).length, label:'employees with PF applicable', warn:'UAN missing'},
-      {title:'ESI Status', icon:'🏥', ok:DATA.people.filter(p=>p.esi).length, issue:DATA.people.filter(p=>p.esi&&!p.ip).length, label:'employees with ESI applicable', warn:'IP number missing'},
+      {title:'PF Status', icon:'💼', ok:getFilteredPeople().filter(p=>p.pf).length, issue:getFilteredPeople().filter(p=>p.pf&&!p.uan).length, label:'employees with PF applicable', warn:'UAN missing'},
+      {title:'ESI Status', icon:'🏥', ok:getFilteredPeople().filter(p=>p.esi).length, issue:getFilteredPeople().filter(p=>p.esi&&!p.ip).length, label:'employees with ESI applicable', warn:'IP number missing'},
     ].map(s => `
     <div class="kpi-tile ${s.issue?'warn':'ok'}">
       <div class="kpi-icon">${s.icon}</div>
@@ -3568,7 +3721,7 @@ function peoplePFESI() {
     <table class="data-table">
       <thead><tr><th>Employee</th><th>PF Applicable</th><th>UAN</th><th>ESI Applicable</th><th>IP Number</th><th>Status</th></tr></thead>
       <tbody>
-        ${DATA.people.map(p => `
+        ${getFilteredPeople().map(p => `
         <tr>
           <td class="cell-primary">${p.name}</td>
           <td>${p.pf ? '<span style="color:var(--green-d)">✓ Yes</span>' : '—'}</td>
@@ -3583,7 +3736,7 @@ function peoplePFESI() {
 }
 
 function showPersonDetail(id) {
-  const p = DATA.people.find(x => x.id === id);
+  const p = getFilteredPeople().find(x => x.id === id);
   if (!p) return;
   document.getElementById('drawer-title').textContent = p.name;
   document.getElementById('drawer-sub').textContent = p.role + ' · ' + p.dept;
@@ -3607,7 +3760,8 @@ let activeFolder = 'All';
 const folders = ['All','Licences','PF/ESI','Audits','OEM','Safety','Accidents'];
 
 function docs() {
-  const filteredDocs = activeFolder === 'All' ? DATA.docs : DATA.docs.filter(d => d.folder === activeFolder);
+  const docsByPlant = getFilteredDocs();
+  const filteredDocs = activeFolder === 'All' ? docsByPlant : docsByPlant.filter(d => d.folder === activeFolder);
   const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
 
   return `
@@ -3615,7 +3769,7 @@ function docs() {
     <div class="page-header">
       <div>
         <div class="page-title">Documents & Evidence</div>
-        <div class="page-sub">${DATA.docs.length} files · Organised by plant and category</div>
+        <div class="page-sub">${getFilteredDocs().length} files · Organised by plant and category</div>
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')"><span class="search-icon" aria-hidden="true" style="margin-right:6px"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>Search</button>
@@ -3629,7 +3783,7 @@ function docs() {
         <div class="doc-tree-item ${activeFolder===f?'active':''} ${f!=='All'?'sub':''}" onclick="switchFolder('${f}')">
           <span>${f==='All'?'🗂':f==='Licences'?'📋':f==='PF/ESI'?'💼':f==='Audits'?'✅':f==='OEM'?'🏭':f==='Safety'?'🦺':'⚠'}</span>
           ${f}
-          <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?DATA.docs.length:DATA.docs.filter(d=>d.folder===f).length}</span>
+          <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?getFilteredDocs().length:getFilteredDocs().filter(d=>d.folder===f).length}</span>
         </div>`).join('')}
       </div>
 
@@ -3664,7 +3818,7 @@ function switchFolder(folder) {
 }
 
 function showDocDetail(id) {
-  const d = DATA.docs.find(x => x.id === id);
+  const d = getFilteredDocs().find(x => x.id === id);
   if (!d) return;
   const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
   document.getElementById('drawer-title').textContent = d.name;
@@ -3698,8 +3852,8 @@ function settings() {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       ${[
-        {icon:'🏭',title:'Plants & Locations',sub:`${getActivePlantLocation() || getActivePlantName()} · 1 plant · Add new plant`,btn:'Manage plants'},
-        {icon:'⚖️',title:'Compliance Frameworks',sub:`33 obligations active${plantState.state ? ` · ${plantState.state} templates` : ''}`,btn:'Edit frameworks'},
+        {icon:'🏭',title:'Plants & Locations',sub:`${getActivePlantLocation() || getActivePlantName()} · ${plants.length} plant${plants.length===1?'':'s'} · Add new plant`,btn:'Add plant'},
+        {icon:'⚖️',title:'Compliance Frameworks',sub:`33 obligations active${getSelectedPlant()?.state ? ` · ${getSelectedPlant().state} templates` : ''}`,btn:'Edit frameworks'},
         {icon:'👥',title:'Users & Roles',sub:'4 users · Admin, Manager, Checker, Viewer',btn:'Manage users'},
         {icon:'🔔',title:'Notifications & Reminders',sub:'Email + WhatsApp · 60/30/15 day lead times',btn:'Configure'},
         {icon:'📊',title:'Report Templates',sub:'OEM pack, Statutory report, PF/ESI summary',btn:'Edit templates'},
@@ -3710,7 +3864,7 @@ function settings() {
         <div style="flex:1">
           <div class="card-title">${s.title}</div>
           <div class="card-sub" style="margin-top:3px;margin-bottom:12px">${s.sub}</div>
-          <button class="btn btn-secondary btn-sm" onclick="showToast('${s.btn} — coming soon','info')">${s.btn} →</button>
+          <button class="btn btn-secondary btn-sm" onclick="${s.title==='Plants & Locations' ? 'addNewPlant()' : `showToast('${s.btn} — coming soon','info')`}">${s.btn} →</button>
         </div>
       </div>`).join('')}
     </div>
@@ -3777,9 +3931,9 @@ function globalSearch(q) {
 ───────────────────────────────────────────────────────── */
 // Start with onboarding, then show dashboard after
 // (modal auto-triggers, dashboard shown after completion)
-loadPlantFromStorage();
+loadPlantState();
+plantifyData();
 applyPlantToSidebar();
-applyPlantToDatasets();
 hydrateOnboardingPlantInputs();
 document.getElementById('new-freq').addEventListener('change', updateCustomFrequencyFields);
 resetCreateChecklistForm();
