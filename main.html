@@ -2510,7 +2510,7 @@ function dashboard() {
       <div>
         <!-- Calendar -->
         <div class="card" style="margin-bottom:20px">
-          <div class="card-title" style="margin-bottom:14px">March 2026</div>
+          <div class="card-title" style="margin-bottom:14px" id="cal-month-label">Month Year</div>
           <div class="cal-grid" id="cal-headers"></div>
           <div class="cal-grid" style="margin-top:6px" id="cal-days"></div>
         </div>
@@ -2561,21 +2561,49 @@ function dashboard() {
 }
 
 function initCalendar() {
-  const headers = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const headers = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const hEl = document.getElementById('cal-headers');
   const dEl = document.getElementById('cal-days');
-  if (!hEl) return;
+  const monthLabelEl = document.getElementById('cal-month-label');
+  if (!hEl || !dEl) return;
+
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const currentDate = today.getDate();
+  const monthNames = [
+    'January', 'February', 'March', 'April',
+    'May', 'June', 'July', 'August',
+    'September', 'October', 'November', 'December'
+  ];
+
+  if (monthLabelEl) {
+    monthLabelEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+  }
+
   hEl.innerHTML = headers.map(h => `<div class="cal-header">${h}</div>`).join('');
-  // March 2026 starts on Sunday = 7 (Mon-Sun grid offset 6)
-  const daysInMonth = 31;
-  const startOffset = 6; // March 1, 2026 is Sunday
-  const events = {10: 'red', 13: 'amber', 15: 'amber', 20: 'amber', 31: 'green'};
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const events = DATA.actions.reduce((acc, action) => {
+    const actionDate = new Date(action.dueDate);
+    if (
+      !Number.isNaN(actionDate.getTime()) &&
+      actionDate.getMonth() === currentMonth &&
+      actionDate.getFullYear() === currentYear
+    ) {
+      acc[actionDate.getDate()] = action.status === 'overdue' ? 'red' : 'amber';
+    }
+    return acc;
+  }, {});
+
   let html = '';
-  for (let i = 0; i < startOffset; i++) html += `<div class="cal-day past"></div>`;
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day past"></div>`;
   for (let d = 1; d <= daysInMonth; d++) {
-    const isToday = d === 15;
+    const isToday = d === currentDate;
     const ev = events[d];
-    html += `<div class="cal-day ${isToday?'today':''} ${ev?'has-event event-'+ev:''}" onclick="showToast('March ${d}: ${ev==='red'?'MPCB overdue':ev==='amber'?'Filing/renewal due':'Audit scheduled'}','${ev||'info'}')">${d}</div>`;
+    const eventLabel = ev === 'red' ? 'Overdue action' : ev === 'amber' ? 'Action due' : 'No action due';
+    html += `<div class="cal-day ${isToday?'today':''} ${ev?'has-event event-'+ev:''}" onclick="showToast('${monthNames[currentMonth]} ${d}, ${currentYear}: ${eventLabel}','${ev||'info'}')">${d}</div>`;
   }
   dEl.innerHTML = html;
 }
