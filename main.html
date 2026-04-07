@@ -1038,6 +1038,39 @@ body.page-exit {
   box-shadow: 0 0 0 3px rgba(198,172,143,0.25);
 }
 .form-field.full { grid-column: 1 / -1; }
+.file-upload-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #d6cfc7;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f9f7f5;
+}
+.file-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e2da;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--charcoal);
+  white-space: nowrap;
+}
+.file-upload-button:hover {
+  background: #dcd3c7;
+}
+#upload-file-name {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
 
 /* ADD EMPLOYEE DRAWER */
 #add-employee-overlay {
@@ -3786,8 +3819,11 @@ function openUploadDrawer() {
       </div>
       <div class="form-field full">
         <label for="upload-file">File Upload</label>
-        <input id="upload-file" type="file" onchange="handleFileSelect(event)" />
-        <div id="upload-file-name" style="margin-top:8px;font-size:12px;color:var(--muted)">No file selected</div>
+        <input id="upload-file" type="file" hidden onchange="handleFileSelect(event)" />
+        <div class="file-upload-container">
+          <label for="upload-file" class="file-upload-button">Choose File</label>
+          <span id="upload-file-name">No file selected</span>
+        </div>
       </div>
     </div>`;
   document.getElementById('drawer-footer').innerHTML = `
@@ -3811,7 +3847,7 @@ function handleFileSelect(event) {
   const selectedFile = event?.target?.files?.[0] || null;
   uploadFile = selectedFile;
   const nameEl = document.getElementById('upload-file-name');
-  if (nameEl) nameEl.textContent = selectedFile ? `Selected: ${selectedFile.name}` : 'No file selected';
+  if (nameEl) nameEl.textContent = selectedFile ? selectedFile.name : 'No file selected';
   const saveBtn = document.getElementById('save-upload-btn');
   if (saveBtn) saveBtn.disabled = !selectedFile;
 }
