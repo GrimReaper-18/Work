@@ -3666,6 +3666,7 @@ function showPersonDetail(id) {
 ───────────────────────────────────────────────────────── */
 const DOCS_STORAGE_KEY = 'documents';
 let activeFolder = 'All';
+let documentStatusFilter = 'active';
 const folders = ['All','Licenses','PF/ESI','Audits','OEM','Safety','Accidents'];
 let isUploadOpen = false;
 let uploadFolder = '';
@@ -3678,6 +3679,7 @@ function normalizeDocumentRecord(doc = {}) {
   if (!normalized.uploadedAt && normalized.date) normalized.uploadedAt = normalized.date;
   if (!normalized.date && normalized.uploadedAt) normalized.date = normalized.uploadedAt;
   if (!normalized.expiry || normalized.expiry === '—') normalized.expiry = null;
+  normalized.status = normalized.status === 'archived' ? 'archived' : 'active';
   normalized.type = normalized.type || getDocType(normalized.name || '');
   normalized.size = normalized.size || '—';
   normalized.tag = getDocStatusTag(normalized.expiry);
@@ -3737,7 +3739,10 @@ function getDocStatusTag(expiry) {
 }
 
 function docs() {
-  const filteredDocs = activeFolder === 'All' ? DATA.docs : DATA.docs.filter(d => d.folder === activeFolder);
+  const activeDocs = DATA.docs.filter((doc) => doc.status !== 'archived');
+  const archivedDocs = DATA.docs.filter((doc) => doc.status === 'archived');
+  const visibleDocs = documentStatusFilter === 'archived' ? archivedDocs : activeDocs;
+  const filteredDocs = activeFolder === 'All' ? visibleDocs : visibleDocs.filter(d => d.folder === activeFolder);
   const typeIcons = { pdf:'📄', xlsx:'📊', zip:'🗜️' };
 
   return `
@@ -3745,9 +3750,11 @@ function docs() {
     <div class="page-header">
       <div>
         <div class="page-title">Documents & Evidence</div>
-        <div class="page-sub">${DATA.docs.length} files · Organised by plant and category</div>
+        <div class="page-sub">${visibleDocs.length} ${documentStatusFilter === 'archived' ? 'archived' : 'active'} files · Organised by plant and category</div>
       </div>
       <div style="display:flex;gap:10px">
+        <button class="btn btn-${documentStatusFilter === 'active' ? 'primary' : 'secondary'}" onclick="switchDocumentStatusFilter('active')">Active (${activeDocs.length})</button>
+        <button class="btn btn-${documentStatusFilter === 'archived' ? 'primary' : 'secondary'}" onclick="switchDocumentStatusFilter('archived')">Archived (${archivedDocs.length})</button>
         <button class="btn btn-secondary" onclick="showToast('Search documents — coming soon','info')"><span class="search-icon" aria-hidden="true" style="margin-right:6px"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="3"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg></span>Search</button>
         <button class="btn btn-primary" onclick="openUploadDrawer()">+ Upload</button>
       </div>
@@ -3759,7 +3766,7 @@ function docs() {
         <div class="doc-tree-item ${activeFolder===f?'active':''} ${f!=='All'?'sub':''}" onclick="switchFolder('${f}')">
           <span>${f==='All'?'🗂':f==='Licenses'?'📋':f==='PF/ESI'?'💼':f==='Audits'?'✅':f==='OEM'?'🏭':f==='Safety'?'🦺':'⚠'}</span>
           ${f}
-          <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?DATA.docs.length:DATA.docs.filter(d=>d.folder===f).length}</span>
+          <span style="margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted)">${f==='All'?visibleDocs.length:visibleDocs.filter(d=>d.folder===f).length}</span>
         </div>`).join('')}
       </div>
 
@@ -3794,6 +3801,11 @@ function docs() {
 
 function switchFolder(folder) {
   activeFolder = folder;
+  showPage('docs');
+}
+
+function switchDocumentStatusFilter(status) {
+  documentStatusFilter = status === 'archived' ? 'archived' : 'active';
   showPage('docs');
 }
 
@@ -3868,7 +3880,7 @@ function handleUploadDocument() {
     uploadedAt,
     date: uploadedAt,
     expiry,
-    status: 'OK',
+    status: 'active',
     type: getDocType(uploadFile.name),
   });
 
@@ -3904,8 +3916,25 @@ function showDocDetail(id) {
   document.getElementById('drawer-footer').innerHTML = `
     <button class="btn btn-navy" onclick="showToast('Downloading '+' — '+'${d.name}','info')">↓ Download</button>
     <button class="btn btn-secondary" onclick="showToast('Document replaced — upload new version','info')">⬆ Replace</button>
-    <button class="btn btn-danger btn-sm" onclick="showToast('Document archived','warning')">🗑 Archive</button>`;
+    <button class="btn btn-danger btn-sm" onclick="handleArchive('${d.id}')">🗑 Archive</button>`;
   openDrawer();
+}
+
+function handleArchive(docId) {
+  const updatedDocs = DATA.docs.map((doc) => {
+    if (doc.id === docId) {
+      return { ...doc, status: 'archived' };
+    }
+    return doc;
+  });
+
+  DATA.docs = updatedDocs;
+  saveDocumentsToStorage();
+  closeDrawer();
+  if (document.getElementById('nav-docs')?.classList.contains('active')) {
+    showPage('docs');
+  }
+  showToast('Document archived', 'warning');
 }
 
 /* ─────────────────────────────────────────────────────────
